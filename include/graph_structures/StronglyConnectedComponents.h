@@ -1,23 +1,12 @@
-// StronglyConnectedComponents.h
 #ifndef LAB4_SEM3_STRONGLYCONNECTEDCOMPONENTS_H
 #define LAB4_SEM3_STRONGLYCONNECTEDCOMPONENTS_H
 
 #include "Graph.h"
 #include <stdexcept>
 
-/**
- * @brief Класс для поиска компонент сильной связности в ориентированном графе.
- */
+template <typename T>
 class StronglyConnectedComponents {
 public:
-    /**
-     * @brief Находит все компоненты сильной связности в ориентированном графе.
-     *
-     * @tparam T Тип веса рёбер графа.
-     * @param graph Ссылка на ориентированный граф.
-     * @return ArraySequence<ArraySequence<int>> Список компонент сильной связности.
-     */
-    template <typename T>
     static ArraySequence<ArraySequence<int>> findSCC(const Graph<T>& graph) {
         int vertexCount = graph.getVertexCount();
         ArraySequence<bool> visited;
@@ -53,16 +42,7 @@ public:
     }
 
 private:
-    /**
-     * @brief Заполняет порядок завершения вершин с помощью DFS.
-     *
-     * @tparam T Тип веса рёбер графа.
-     * @param v Текущая вершина.
-     * @param graph Ссылка на граф.
-     * @param visited Ссылка на массив посещённых вершин.
-     * @param finishOrder Ссылка на массив порядка завершения.
-     */
-    template <typename T>
+
     static void fillOrder(int v, const Graph<T>& graph, ArraySequence<bool>& visited, ArraySequence<int>& finishOrder) {
         visited[v] = true;
 
@@ -77,14 +57,6 @@ private:
         finishOrder.append(v);
     }
 
-    /**
-     * @brief Транспонирует граф.
-     *
-     * @tparam T Тип веса рёбер графа.
-     * @param graph Ссылка на исходный граф.
-     * @return Транспонированный граф.
-     */
-    template <typename T>
     static Graph<T> getTranspose(const Graph<T>& graph) {
         int vertexCount = graph.getVertexCount();
         Graph<T> transposed(vertexCount);
@@ -100,16 +72,6 @@ private:
         return transposed;
     }
 
-    /**
-     * @brief Рекурсивный обход в глубину на транспонированном графе.
-     *
-     * @tparam T Тип веса рёбер графа.
-     * @param v Текущая вершина.
-     * @param graph Ссылка на транспонированный граф.
-     * @param visited Ссылка на массив посещённых вершин.
-     * @param scc Ссылка на текущую компоненту сильной связности.
-     */
-    template <typename T>
     static void transposedDFS(int v, const Graph<T>& graph, ArraySequence<bool>& visited, ArraySequence<int>& scc) {
         visited[v] = true;
         scc.append(v);

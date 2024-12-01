@@ -40,9 +40,7 @@ public:
         QuickSorter<std::tuple<int, int, T>> sorter([](const std::tuple<int, int, T>& a, const std::tuple<int, int, T>& b) {
             return std::get<2>(a) < std::get<2>(b);  // Сортировка по весу рёбер
         });
-//        std::sort(sortedEdges.begin(), sortedEdges.end(), [](const std::tuple<int, int, T>& a, const std::tuple<int, int, T>& b) {
-//            return std::get<2>(a) < std::get<2>(b);  // Сортировка по весу рёбер
-//        });
+
         sorter.sort(&sortedEdges);
 
 

@@ -1,7 +1,6 @@
-// Graph_test.cpp
+#include <queue>
 #include "gtest/gtest.h"
 #include "../include/graph_structures/Graph.h"
-#include "../include/sequence/Pair.h"
 #include "../include/graph_structures/ConnectedComponents.h"
 #include "../include/graph_structures/GraphColoring.h"
 #include "../include/graph_structures/Lattice.h"
@@ -9,6 +8,7 @@
 #include "../include/graph_structures/ShortestPath.h"
 #include "../include/graph_structures/StronglyConnectedComponents.h"
 #include "../include/graph_structures/TravelingSalesman.h"
+#include "../include/graph_structures/GraphGenerator.h"
 
 
 
@@ -164,14 +164,14 @@ TEST(GraphTest, MultipleEdges) {
 // Тестирование поиска компонент связности в пустом графе
 TEST(ConnectedComponentsTest, EmptyGraph) {
     Graph<int> graph(0);
-    ArraySequence<ArraySequence<int>> components = ConnectedComponents::findComponents(graph);
+    ArraySequence<ArraySequence<int>> components = ConnectedComponents<int>::findComponents(graph);
     EXPECT_EQ(components.getLength(), 0);
 }
 
  //Тестирование поиска компонент связности в графе с одной вершиной
 TEST(ConnectedComponentsTest, SingleVertex) {
     Graph<int> graph(1);
-    auto components = ConnectedComponents::findComponents(graph);
+    auto components = ConnectedComponents<int>::findComponents(graph);
     EXPECT_EQ(components.getLength(), 1);
     ASSERT_EQ(components[0].getLength(), 1);
     //EXPECT_EQ((components[0])[0], 0);
@@ -193,7 +193,7 @@ TEST(ConnectedComponentsTest, FullyConnectedGraph) {
     graph.addEdge(2, 3, 1);
     graph.addEdge(3, 2, 1);
 
-    ArraySequence<ArraySequence<int>> components = ConnectedComponents::findComponents(graph);
+    ArraySequence<ArraySequence<int>> components = ConnectedComponents<int>::findComponents(graph);
     EXPECT_EQ(components.getLength(), 1);
     ASSERT_EQ(components[0].getLength(), 4);
     EXPECT_EQ(components[0][0], 0);
@@ -217,7 +217,7 @@ TEST(ConnectedComponentsTest, MultipleComponents) {
     graph.addEdge(4, 3, 1);
     // Третья компонента: 5
 
-    ArraySequence<ArraySequence<int>> components = ConnectedComponents::findComponents(graph);
+    ArraySequence<ArraySequence<int>> components = ConnectedComponents<int>::findComponents(graph);
     EXPECT_EQ(components.getLength(), 3);
 
     // Проверка первой компоненты
@@ -244,7 +244,7 @@ TEST(ConnectedComponentsTest, ComplexWeightTypes) {
     graph.addEdge(1, 2, "B");
     graph.addEdge(2, 1, "B");
 
-    ArraySequence<ArraySequence<int>> components = ConnectedComponents::findComponents(graph);
+    ArraySequence<ArraySequence<int>> components = ConnectedComponents<std::string>::findComponents(graph);
     EXPECT_EQ(components.getLength(), 1);
     ASSERT_EQ(components[0].getLength(), 3);
     EXPECT_EQ(components[0][0], 0);
@@ -555,7 +555,7 @@ TEST(ShortestPathTest, DijkstraBasic) {
     graph.addEdge(4, 2, 2);
     graph.addEdge(4, 1, 4);
 
-    auto result = ShortestPath<double>::Dijkstra(graph, 0);
+    auto result = ShortestPath::dijkstra(graph, 0);
     ArraySequence<double> distances = result.first;
     ArraySequence<int> predecessors = result.second;
 
@@ -578,7 +578,7 @@ TEST(ShortestPathTest, DijkstraDisconnectedGraph) {
     graph.addEdge(0, 1, 1);
     graph.addEdge(2, 3, 1);
 
-    auto result = ShortestPath<double>::Dijkstra(graph, 0);
+    auto result = ShortestPath::dijkstra(graph, 0);
     ArraySequence<double> distances = result.first;
 
     EXPECT_EQ(distances.getLength(), 4);
@@ -590,7 +590,7 @@ TEST(ShortestPathTest, DijkstraDisconnectedGraph) {
 
 TEST(ShortestPathTest, DijkstraSingleVertex) {
     Graph<double> graph(1);
-    auto result = ShortestPath<double>::Dijkstra(graph, 0);
+    auto result = ShortestPath::dijkstra(graph, 0);
     ArraySequence<double> distances = result.first;
 
     EXPECT_EQ(distances.getLength(), 1);
@@ -600,7 +600,7 @@ TEST(ShortestPathTest, DijkstraSingleVertex) {
 TEST(ShortestPathTest, DijkstraEmptyGraph) {
     Graph<double> graph(0);
     // Expect no exception, but distances should be empty
-    auto result = ShortestPath<double>::Dijkstra(graph, 0);
+    auto result = ShortestPath::dijkstra(graph, 0);
     ArraySequence<double> distances = result.first;
 
     EXPECT_EQ(distances.getLength(), 0);
@@ -616,7 +616,7 @@ TEST(StronglyConnectedComponentsTest, FindSCCBasic) {
     graph.addEdge(0, 3, 1);
     graph.addEdge(3, 4, 1);
 
-    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents::findSCC<int>(graph);
+    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents<int>::findSCC(graph);
 
     EXPECT_EQ(scc.getLength(), 3);
 
@@ -637,7 +637,7 @@ TEST(StronglyConnectedComponentsTest, FindSCCBasic) {
 
 TEST(StronglyConnectedComponentsTest, FindSCCSingleVertex) {
     Graph<int> graph(1);
-    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents::findSCC<int>(graph);
+    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents<int>::findSCC(graph);
 
     EXPECT_EQ(scc.getLength(), 1);
     EXPECT_EQ(scc[0].getLength(), 1);
@@ -650,7 +650,7 @@ TEST(StronglyConnectedComponentsTest, FindSCCCycle) {
     graph.addEdge(1, 2, 1);
     graph.addEdge(2, 0, 1);
 
-    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents::findSCC<int>(graph);
+    ArraySequence<ArraySequence<int>> scc = StronglyConnectedComponents<int>::findSCC(graph);
 
     EXPECT_EQ(scc.getLength(), 1);
     EXPECT_EQ(scc[0].getLength(), 3);
@@ -840,4 +840,197 @@ TEST(TravelingSalesmanTest, LargeGraphTest) {
 
     // Проверяем стоимость
     EXPECT_EQ(result.second, expectedCost);
+}
+
+TEST(GraphGeneratorTest, GenerateCompleteGraph) {
+    int vertices = 5;
+    int maxWeight = 100;
+
+    // Генерация полного графа
+    Graph<int> graph = GraphGenerator::generateCompleteGraph(vertices, maxWeight);
+
+    // Проверка количества вершин
+    EXPECT_EQ(graph.getVertexCount(), vertices);
+
+    // В полном неориентированном графе количество рёбер должно быть n*(n-1)/2
+    int expectedEdges = vertices * (vertices - 1) / 2;
+    // Поскольку addUndirectedEdge добавляет оба направления, общее количество рёбер в списке должно быть 2 * expectedEdges
+    EXPECT_EQ(graph.getEdges().getLength(), expectedEdges * 2) << "Complete graph should have " << expectedEdges * 2 << " edges.";
+
+    // Проверка наличия всех возможных рёбер
+    for (int i = 0; i < vertices; ++i) {
+        for (int j = i + 1; j < vertices; ++j) {
+            EXPECT_TRUE(graph.hasEdge(i, j)) << "Edge (" << i << ", " << j << ") should exist.";
+            EXPECT_TRUE(graph.hasEdge(j, i)) << "Edge (" << j << ", " << i << ") should exist.";
+        }
+    }
+
+    // Проверка диапазона весов рёбер
+    for (int i = 0; i < graph.getEdges().getLength(); ++i) {
+        const std::tuple<int, int, int>& edge = graph.getEdges().get(i);
+        EXPECT_GE(std::get<2>(edge), 1) << "Edge weight should be at least 1.";
+        EXPECT_LE(std::get<2>(edge), maxWeight) << "Edge weight should not exceed maxWeight.";
+    }
+}
+
+/**
+ * @brief Тестирование генерации разреженного графа (дерева).
+ */
+TEST(GraphGeneratorTest, GenerateSparseGraph) {
+    int vertices = 10;
+    int maxWeight = 50;
+
+    // Генерация разреженного графа
+    Graph<int> graph = GraphGenerator::generateSparseGraph(vertices, maxWeight);
+
+    // Проверка количества вершин
+    EXPECT_EQ(graph.getVertexCount(), vertices);
+
+    // В дереве количество рёбер должно быть n-1, а addUndirectedEdge добавляет два направления
+    int expectedEdges = vertices - 1;
+    EXPECT_EQ(graph.getEdges().getLength(), expectedEdges * 2) << "Sparse graph should have " << expectedEdges * 2 << " edges.";
+
+    // Проверка связности графа с помощью обхода в ширину (BFS)
+    ArraySequence<bool> visited;
+    for(int i = 0; i < vertices; ++i) {
+        visited.append(false);
+    }
+
+    std::queue<int> q;
+    q.push(0);
+    visited[0] = true;
+
+    while(!q.empty()) {
+        int current = q.front();
+        q.pop();
+
+        ArraySequence<Pair<int, int>> neighbors = graph.getNeighbors(current);
+        for(int i = 0; i < neighbors.getLength(); ++i) {
+            int neighbor = neighbors.get(i).first;
+            if(!visited[neighbor]) {
+                visited[neighbor] = true;
+                q.push(neighbor);
+            }
+        }
+    }
+
+    // Проверяем, что все вершины посещены
+    for(int i = 0; i < vertices; ++i) {
+        EXPECT_TRUE(visited[i]) << "Vertex " << i << " should be connected.";
+    }
+}
+
+/**
+ * @brief Тестирование генерации случайного графа с заданной плотностью.
+ */
+TEST(GraphGeneratorTest, GenerateRandomGraph) {
+    int vertices = 6;
+    double density = 0.5; // Для n=6, maxEdges=15; ожидаемое количество рёбер = 7
+    int maxWeight = 100;
+
+    // Генерация случайного графа
+    Graph<int> graph = GraphGenerator::generateRandomGraph(vertices, density, maxWeight);
+
+    // Проверка количества вершин
+    EXPECT_EQ(graph.getVertexCount(), vertices);
+
+    // Вычисление ожидаемого количества рёбер
+    int maxEdges = vertices * (vertices - 1) / 2;
+    int expectedEdges = static_cast<int>(density * maxEdges);
+
+    // В addUndirectedEdge добавляются два направления
+    EXPECT_EQ(graph.getEdges().getLength(), expectedEdges * 2) << "Random graph should have " << expectedEdges * 2 << " edges.";
+
+    // Проверка диапазона весов рёбер
+    for (int i = 0; i < graph.getEdges().getLength(); ++i) {
+        const std::tuple<int, int, int>& edge = graph.getEdges().get(i);
+        EXPECT_GE(std::get<2>(edge), 1) << "Edge weight should be at least 1.";
+        EXPECT_LE(std::get<2>(edge), maxWeight) << "Edge weight should not exceed maxWeight.";
+    }
+}
+
+/**
+ * @brief Тестирование генерации случайного графа с некорректной плотностью.
+ */
+TEST(GraphGeneratorTest, GenerateRandomGraphInvalidDensity) {
+    int vertices = 5;
+    int maxWeight = 100;
+
+    // Плотность меньше 0.0
+    double invalidDensityLow = -0.1;
+    EXPECT_THROW(GraphGenerator::generateRandomGraph(vertices, invalidDensityLow, maxWeight), std::invalid_argument);
+
+    // Плотность больше 1.0
+    double invalidDensityHigh = 1.1;
+    EXPECT_THROW(GraphGenerator::generateRandomGraph(vertices, invalidDensityHigh, maxWeight), std::invalid_argument);
+}
+
+/**
+ * @brief Тестирование генерации полного графа с некорректным количеством вершин.
+ */
+TEST(GraphGeneratorTest, GenerateCompleteGraphInvalidVertices) {
+    int invalidVertices = -3;
+    int maxWeight = 100;
+
+    EXPECT_THROW(GraphGenerator::generateCompleteGraph(invalidVertices, maxWeight), std::invalid_argument);
+}
+
+/**
+ * @brief Тестирование генерации разреженного графа с некорректным количеством вершин.
+ */
+TEST(GraphGeneratorTest, GenerateSparseGraphInvalidVertices) {
+    int invalidVertices = -1;
+    int maxWeight = 100;
+
+    EXPECT_THROW(GraphGenerator::generateSparseGraph(invalidVertices, maxWeight), std::invalid_argument);
+}
+
+/**
+ * @brief Тестирование генерации случайного графа с нулевым количеством вершин.
+ */
+TEST(GraphGeneratorTest, GenerateRandomGraphZeroVertices) {
+    int vertices = 0;
+    double density = 0.5;
+    int maxWeight = 100;
+
+    EXPECT_THROW(GraphGenerator::generateRandomGraph(vertices, density, maxWeight), std::invalid_argument);
+}
+
+/**
+ * @brief Тестирование, что сгенерированный разреженный граф содержит именно n-1 рёбер.
+ */
+TEST(GraphGeneratorTest, GenerateSparseGraphEdgeCount) {
+    int vertices = 10;
+    int maxWeight = 50;
+
+    // Генерация разреженного графа
+    Graph<int> graph = GraphGenerator::generateSparseGraph(vertices, maxWeight);
+
+    // В дереве количество рёбер должно быть n-1, а addUndirectedEdge добавляет два направления
+    int expectedEdges = vertices - 1;
+    EXPECT_EQ(graph.getEdges().getLength(), expectedEdges * 2) << "Sparse graph should have " << expectedEdges * 2 << " edges.";
+}
+
+/**
+ * @brief Тестирование генерации случайного графа с плотностью 1.0 (должно быть полным графом).
+ */
+TEST(GraphGeneratorTest, GenerateRandomGraphFullDensity) {
+    int vertices = 4;
+    double density = 1.0;
+    int maxWeight = 100;
+
+    // Генерация случайного графа с плотностью 1.0
+    Graph<int> graph = GraphGenerator::generateRandomGraph(vertices, density, maxWeight);
+
+    // Проверка, что граф является полным
+    int expectedEdges = vertices * (vertices - 1) / 2;
+    EXPECT_EQ(graph.getEdges().getLength(), expectedEdges * 2) << "Random graph with full density should have " << expectedEdges * 2 << " edges.";
+
+    // Проверка наличия всех возможных рёбер
+    for (int i = 0; i < vertices; ++i) {
+        for (int j = i + 1; j < vertices; ++j) {
+            EXPECT_TRUE(graph.hasEdge(i, j)) << "Edge (" << i << ", " << j << ") should exist.";
+            EXPECT_TRUE(graph.hasEdge(j, i)) << "Edge (" << j << ", " << i << ") should exist.";
+        }
+    }
 }

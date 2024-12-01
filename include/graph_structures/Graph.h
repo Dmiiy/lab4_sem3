@@ -2,7 +2,7 @@
 #define LAB4_SEM3_GRAPH_H
 #include <stdexcept>
 #include "../sequence/ArraySequence.h"
-#include <tuple>  // Для работы с std::tuple
+#include <tuple>
 #include "../sequence/Pair.h"
 template<class T>
 class Graph {
@@ -13,6 +13,10 @@ private:
 public:
     // Конструктор
     explicit Graph(int vertices) : vertexCount(vertices), edges() {}
+
+    Graph(const Graph& other) = default;
+
+    Graph& operator=(const Graph& other) = default;
 
     // Добавление ребра
     void addEdge(int from, int to, T weight) {
@@ -88,8 +92,7 @@ public:
         return vertexCount;
     }
 
-    // Очистка всех рёбер
-    void clearEdges() {
+        void clearEdges() {
         edges.clear();
     }
 
@@ -102,13 +105,6 @@ public:
         }
     }
 
-    // Деструктор
-    ~Graph() = default;
-
-    // Конструктор копирования и оператор присваивания
-    Graph(const Graph& other) = default;
-    Graph& operator=(const Graph& other) = default;
-
     // Получение веса ребра
     T getEdgeWeight(int from, int to) const {
         for (int i = 0; i < edges.getLength(); ++i) {
@@ -118,6 +114,8 @@ public:
         }
         throw std::invalid_argument("Edge not found");
     }
+
+    ~Graph() = default;
 };
 
 #endif

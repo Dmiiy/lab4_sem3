@@ -1,90 +1,84 @@
-// GraphGenerator.h
 #ifndef LAB4_SEM3_GRAPHGENERATOR_H
 #define LAB4_SEM3_GRAPHGENERATOR_H
 
 #include "Graph.h"
-#include <cstdlib>
-#include <ctime>
-#include <iostream>
-#include <stdexcept>
-#include <algorithm>            // Для std::swap
+#include <algorithm>
 #include <random>
+#include <stdexcept>
 
 class GraphGenerator {
 public:
-    /**
-     * @brief Генерация полного графа.
-     *
-     * Полный граф - это граф, в котором каждая пара вершин соединена ребром.
-     *
-     * @param vertices Количество вершин в графе.
-     * @param maxWeight Максимальный вес ребра (по умолчанию 100).
-     * @return Сгенерированный полный граф типа Graph<int>.
-     */
+
     static Graph<int> generateCompleteGraph(int vertices, int maxWeight = 100) {
+        if (vertices <= 0) {
+            throw std::invalid_argument("Number of vertices must be positive.");
+        }
+
         Graph<int> graph(vertices);
+        std::mt19937 gen(std::random_device{}());
+        std::uniform_int_distribution<> dis(1, maxWeight);
+
         for (int i = 0; i < vertices; ++i) {
             for (int j = i + 1; j < vertices; ++j) {
-                int weight = rand() % maxWeight + 1; // Вес в диапазоне [1, maxWeight]
+                int weight = dis(gen); // Вес в диапазоне [1, maxWeight]
                 graph.addUndirectedEdge(i, j, weight);
             }
         }
         return graph;
     }
 
-    /**
-     * @brief Генерация разреженного графа (графа в виде дерева).
-     *
-     * Разреженный граф - это граф, содержащий минимальное количество ребер для связности.
-     *
-     * @param vertices Количество вершин в графе.
-     * @param maxWeight Максимальный вес ребра (по умолчанию 100).
-     * @return Сгенерированный разреженный граф типа Graph<int>.
-     */
     static Graph<int> generateSparseGraph(int vertices, int maxWeight = 100) {
+        if (vertices <= 0) {
+            throw std::invalid_argument("Number of vertices must be positive.");
+        }
+
         Graph<int> graph(vertices);
+        std::mt19937 gen(std::random_device{}());
+        std::uniform_int_distribution<> dis(1, maxWeight);
+
         for (int i = 1; i < vertices; ++i) {
-            int parent = rand() % i; // Соединяем новую вершину с уже существующей
-            int weight = rand() % maxWeight + 1;
+            std::uniform_int_distribution<> parent_dis(0, i - 1);
+            int parent = parent_dis(gen);
+            int weight = dis(gen);
             graph.addUndirectedEdge(i, parent, weight);
         }
+
         return graph;
     }
 
-    /**
-     * @brief Генерация случайного графа с заданной плотностью.
-     *
-     * @param vertices Количество вершин в графе.
-     * @param density Плотность графа в диапазоне [0.0, 1.0].
-     * @param maxWeight Максимальный вес ребра (по умолчанию 100).
-     * @return Сгенерированный случайный граф типа Graph<int>.
-     * @throws std::invalid_argument Если плотность не находится в диапазоне [0.0, 1.0].
-     */
+     // Генерация случайного графа с заданной плотностью [0.0, 1.0]
     static Graph<int> generateRandomGraph(int vertices, double density, int maxWeight = 100) {
+        if (vertices <= 0) {
+            throw std::invalid_argument("Number of vertices must be positive.");
+        }
         if (density < 0.0 || density > 1.0) {
-            throw std::invalid_argument("Density must be between 0.0 and 1.0");
+            throw std::invalid_argument("Density must be between 0.0 and 1.0.");
         }
 
         Graph<int> graph(vertices);
-        int maxEdges = vertices * (vertices - 1) / 2; // Максимальное количество ребер
-        int targetEdges = static_cast<int>(density * maxEdges); // Желаемое количество ребер
+        std::mt19937 gen(std::random_device{}());
+        std::uniform_int_distribution<> dis_weight(1, maxWeight);
 
-        // Создание последовательности всех возможных ребер
+        // Создание списка всех возможных неориентированных ребер
         ArraySequence<Pair<int, int>> allEdges;
         for (int i = 0; i < vertices; ++i) {
             for (int j = i + 1; j < vertices; ++j) {
-                allEdges.append(Pair(i, j));
+                allEdges.append({i, j});
             }
         }
 
-        // Перемешивание последовательности ребер с использованием алгоритма Фишера-Йейтса
-        shuffleArraySequence(allEdges);
+        // Перемешивание ребер
+        shuffleArraySequence(allEdges, gen);
 
-        // Добавление первых targetEdges ребер в граф
-        for (int i = 0; i < targetEdges; ++i) {
-            int u = allEdges[i].first;
-            int v = allEdges[i].second;
-            int weight = rand() % maxWeight + 1;
+        // Определение количества ребер для достижения заданной плотности
+        int maxEdges = vertices * (vertices - 1) / 2;
+        int targetEdges = static_cast<int>(density * maxEdges);
+
+        // Добавление ребер в граф
+        for (int i = 0; i < targetEdges && i < allEdges.getLength(); ++i) {
+            int u = allEdges.get(i).first;
+            int v = allEdges.get(i).second;
+            int weight = dis_weight(gen);
             graph.addUndirectedEdge(u, v, weight);
         }
 
@@ -92,17 +86,10 @@ public:
     }
 
 private:
-    /**
-     * @brief Перемешивает элементы в ArraySequence с использованием алгоритма Фишера-Йейтса.
-     *
-     * @tparam T Тип элементов в ArraySequence.
-     * @param seq Ссылка на ArraySequence, который нужно перемешать.
-     */
-    template <typename T>
-    static void shuffleArraySequence(ArraySequence<T>& seq) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
 
+     //алгоритм Фишера-Йейтса
+    template <typename T>
+    static void shuffleArraySequence(ArraySequence<T>& seq, std::mt19937& gen) {
         for (int i = seq.getLength() - 1; i > 0; --i) {
             std::uniform_int_distribution<> dis(0, i);
             int j = dis(gen);
@@ -110,14 +97,6 @@ private:
         }
     }
 
-    /**
-     * @brief Обменивает местами два элемента в ArraySequence.
-     *
-     * @tparam T Тип элементов в ArraySequence.
-     * @param seq Ссылка на ArraySequence, содержащий элементы.
-     * @param i Индекс первого элемента.
-     * @param j Индекс второго элемента.
-     */
     template <typename T>
     static void Swap(ArraySequence<T>& seq, int i, int j) {
         T temp = seq[i];
@@ -126,4 +105,4 @@ private:
     }
 };
 
-#endif //LAB4_SEM3_GRAPHGENERATOR_H
+#endif // LAB4_SEM3_GRAPHGENERATOR_H

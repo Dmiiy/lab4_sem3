@@ -7,9 +7,6 @@
 #include <limits>
 #include <stdexcept>
 
-// Предполагается, что Pair.h, Graph.h, ArraySequence.h, IDictionaryBinaryTree.h
-// и другие необходимые заголовочные файлы правильно реализованы.
-
 template<typename T>
 class TravelingSalesman {
 private:

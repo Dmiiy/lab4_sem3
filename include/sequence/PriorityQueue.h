@@ -1,4 +1,3 @@
-// PriorityQueue.h
 #ifndef LAB4_SEM3_PRIORITYQUEUE_H
 #define LAB4_SEM3_PRIORITYQUEUE_H
 
@@ -7,13 +6,11 @@
 #include "Sequence.h"
 #include <stdexcept>
 
-// Наследуемся от Sequence<Pair<T, K>>
 template<typename T, typename K>
 class PriorityQueue : public Sequence<Pair<T, K>> {
 private:
-    ArraySequence<Pair<T, K>> data; // Хранение элементов очереди
+    ArraySequence<Pair<T, K>> data;
 
-    // Скрытие методов из Sequence путем переопределения и объявления их как private
     Pair<T, K> get(int index) const override {
         throw std::invalid_argument("Operation not supported");
     }
@@ -31,14 +28,14 @@ private:
     }
 
     void append(Pair<T, K> item) override {
-        Enqueue(item.first, item.second); // Вызов Enqueue при добавлении
+        Enqueue(item.first, item.second);
     }
 
     void prepend(Pair<T, K> item) override {
-        Enqueue(item.first, item.second); // Вызов Enqueue при добавлении
+        Enqueue(item.first, item.second);
     }
 
-    void insertAt(Pair<T, K> item, int index) override { // Исправленная сигнатура
+    void insertAt(Pair<T, K> item, int index) override {
         throw std::invalid_argument("Invalid operation");
     }
 
@@ -71,14 +68,13 @@ private:
     }
 
 public:
-    // Конструктор по умолчанию
+
     PriorityQueue() = default;
 
     // Метод добавления элемента с приоритетом
     void Enqueue(T item, K priority) {
         Pair<T, K> newPair(item, priority);
         int i = 0;
-        // Найти подходящее место для вставки (больший или равный приоритет соответствует большему или равному значению K)
         while (i < data.getLength() && data[i].second >= priority) {
             ++i;
         }
@@ -119,27 +115,22 @@ public:
         return data.getLast();
     }
 
-    // Метод проверки, пуста ли очередь
     bool isEmpty() const {
         return data.getLength() == 0;
     }
 
-    // Метод получения количества элементов в очереди
     int size() const {
         return data.getLength();
     }
 
-    // Метод очистки очереди
     void clear() override {
         data.clear();
     }
 
-    // Переопределение getLength()
     int getLength() const override {
         return data.getLength();
     }
 
-    // Деструктор
     virtual ~PriorityQueue()  {}
 };
 

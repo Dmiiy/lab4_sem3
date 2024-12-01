@@ -1,10 +1,9 @@
-// Pair.h
 #ifndef LAB4_SEM3_PAIR_H
 #define LAB4_SEM3_PAIR_H
 
 #include <iostream>
-#include <utility> // For std::hash if needed
-#include <functional> // For std::function if needed
+#include <utility>
+#include <functional>
 
 template <typename T, typename K>
 class Pair {

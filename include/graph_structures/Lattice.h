@@ -1,12 +1,10 @@
-// Lattice.h
 #ifndef LATTICE_H
 #define LATTICE_H
 
 #include "Graph.h"
+#include "../data_structures/IDictionaryBinaryTree.h"
 #include <functional>
-#include <unordered_map>
 #include <optional>
-#include <vector>
 
 template<typename T>
 class Lattice {
@@ -15,7 +13,7 @@ private:
     bool isExplicit;
     std::function<bool(T, T)> relation; // Компаратор для неявной диаграммы Хассе
     ArraySequence<T> elements; // Элементы решётки
-    std::unordered_map<T, int> elementToIndex; // Соответствие элемента индексу
+    IDictionaryBinaryTree<T, int> elementToIndex; // Соответствие элемента индексу
     ArraySequence<T> indexToElement;
 
 public:
@@ -25,7 +23,7 @@ public:
         int n = elements.getLength();
         for (int i = 0; i < n; ++i) {
             T elem = elements[i];
-            elementToIndex[elem] = i;
+            elementToIndex.Add(elem, i);
             indexToElement.append(elem);
         }
     }
@@ -36,7 +34,7 @@ public:
         int n = elems.getLength();
         for (int i = 0; i < n; ++i) {
             T elem = elems[i];
-            elementToIndex[elem] = i;
+            elementToIndex.Add(elem, i);
             indexToElement.append(elem);
         }
         // Построение диаграммы Хассе на основе отношения
@@ -68,13 +66,11 @@ public:
     bool lessEqual(T a, T b) const {
         if (isExplicit) {
             // Используем hasseDiagram для проверки пути от a к b
-            auto itA = elementToIndex.find(a);
-            auto itB = elementToIndex.find(b);
-            if (itA == elementToIndex.end() || itB == elementToIndex.end()) {
+            if (!elementToIndex.ContainsKey(a) || !elementToIndex.ContainsKey(b)) {
                 return false;
             }
-            int indexA = itA->second;
-            int indexB = itB->second;
+            int indexA = elementToIndex.Get(a);
+            int indexB = elementToIndex.Get(b);
             return hasPath(indexA, indexB);
         } else {
             // Используем заданное отношение
@@ -86,11 +82,14 @@ public:
     bool hasPath(int fromIndex, int toIndex) const {
         if (fromIndex == toIndex) return true;
         int n = hasseDiagram.getVertexCount();
-        std::vector<bool> visited(n, false);
+        ArraySequence<bool> visited;
+        for (int i = 0; i < n; ++i) {
+            visited.append(false);
+        }
         return dfs(fromIndex, toIndex, visited);
     }
 
-    bool dfs(int current, int target, std::vector<bool>& visited) const {
+    bool dfs(int current, int target, ArraySequence<bool>& visited) const {
         if (current == target) return true;
         visited[current] = true;
         auto neighbors = hasseDiagram.getNeighbors(current);
@@ -156,6 +155,21 @@ public:
         }
         return lub;
     }
+
+    Graph<T> getHasseDiagram() const {
+        return hasseDiagram;
+    }
+
+    void printHasseDiagram() const {
+        std::cout << "Hasse Diagram:" << std::endl;
+        for (int i = 0; i < hasseDiagram.getEdges().getLength(); ++i) {
+            auto edge = hasseDiagram.getEdges().get(i);
+            int from = std::get<0>(edge);
+            int to = std::get<1>(edge);
+            std::cout << indexToElement[from] << " -> " << indexToElement[to] << std::endl;
+        }
+    }
+
 };
 
 #endif // LATTICE_H

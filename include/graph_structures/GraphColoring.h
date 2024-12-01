@@ -12,7 +12,7 @@ public:
         ArraySequence<int> result;   // Цвета вершин
 
         if(n == 0){
-            return result; // Возвращаем пустую последовательность для пустого графа
+            return result;
         }
 
         // Инициализация массивов

@@ -1,29 +1,22 @@
-// ShortestPath.h
 #ifndef LAB4_SEM3_SHORTESTPATH_H
 #define LAB4_SEM3_SHORTESTPATH_H
 
 #include "Graph.h"
 #include "../sequence/PriorityQueue.h"
-
-#include <vector>
 #include <limits>
 #include <utility>
 
-// Типы для удобства
 typedef int Vertex;
 typedef double Weight;
 
-// Класс для поиска кратчайших путей с использованием алгоритма Дейкстры
-template <typename T>
 class ShortestPath {
 public:
     // Метод Дейкстры для поиска кратчайшего пути от источника к всем другим вершинам
-    static Pair<ArraySequence<Weight>, ArraySequence<Vertex>> Dijkstra(const Graph<Weight>& graph, Vertex source) {
+    static Pair<ArraySequence<Weight>, ArraySequence<Vertex>> dijkstra(const Graph<Weight>& graph, Vertex source) {
         int n = graph.getVertexCount();
         ArraySequence<Weight> distances;
         ArraySequence<Vertex> predecessors;
 
-        // Обработка пустого графа
         if(n == 0){
             return {ArraySequence<Weight>(), ArraySequence<Vertex>()};
         }
