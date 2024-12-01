@@ -1,4 +1,3 @@
-// TravelingSalesman.h
 #ifndef TRAVELINGSALESMAN_H
 #define TRAVELINGSALESMAN_H
 
