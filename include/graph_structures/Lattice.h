@@ -156,7 +156,10 @@ public:
         return lub;
     }
 
-    Graph<T> getHasseDiagram() const {
+    Graph<T> getHasseDiagram()  {
+        return hasseDiagram;
+    }
+    const Graph<T> getHasseDiagram() const {
         return hasseDiagram;
     }
 
