@@ -94,6 +94,18 @@ private:
         delTree(tree->right);
         delete tree;
     }
+
+    Node* copyTree(const Node* n) {
+        if (n == nullptr) {
+            return nullptr;
+        }
+        Node* newNode = new Node(n->value);
+        newNode->left = copyTree(n->left);
+        newNode->right = copyTree(n->right);
+        newNode->reCalc();
+        return newNode;
+    }
+
     void NLR(Node *n, Operation &op) {
         if (n == nullptr) return;
         op.apply(n);
@@ -258,6 +270,40 @@ public:
     // Constructors and destructor
     AVLBinaryTree() = default;
 
+    // Конструктор копирования
+    AVLBinaryTree(const AVLBinaryTree& other) {
+        root = copyTree(other.root);
+        size = other.size;
+    }
+
+    // Оператор присваивания
+    AVLBinaryTree& operator=(const AVLBinaryTree& other) {
+        if (this != &other) {
+            delTree(root);
+            root = copyTree(other.root);
+            size = other.size;
+        }
+        return *this;
+    }
+
+    // Конструктор перемещения
+    AVLBinaryTree(AVLBinaryTree&& other) noexcept : root(other.root), size(other.size) {
+        other.root = nullptr;
+        other.size = 0;
+    }
+
+    // Оператор перемещения
+    AVLBinaryTree& operator=(AVLBinaryTree&& other) noexcept {
+        if (this != &other) {
+            delTree(root);
+            root = other.root;
+            size = other.size;
+            other.root = nullptr;
+            other.size = 0;
+        }
+        return *this;
+    }
+
     explicit AVLBinaryTree(const ArraySequence<T> &seq) {
         for (int i = 0; i < seq.getLength(); i++)
             insert(seq.get(i));
@@ -269,6 +315,8 @@ public:
 
     ~AVLBinaryTree() {
         delTree(root);
+        root = nullptr;
+        size = 0;
         first = nullptr;
     }
 

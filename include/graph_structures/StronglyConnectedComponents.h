@@ -1,39 +1,61 @@
-#ifndef LAB4_SEM3_STRONGLYCONNECTEDCOMPONENTS_H
-#define LAB4_SEM3_STRONGLYCONNECTEDCOMPONENTS_H
+// StronglyConnectedComponents.h
+#ifndef STRONGLY_CONNECTED_COMPONENTS_H
+#define STRONGLY_CONNECTED_COMPONENTS_H
 
-#include "Graph.h"
-#include <stdexcept>
+#include "DirectedGraph.h"
+#include "../sequence/ArraySequence.h"
+#include <functional>
+#include <stack>
 
+/**
+ * @brief Класс для поиска сильно связанных компонент в ориентированном графе.
+ */
 template <typename T>
 class StronglyConnectedComponents {
 public:
-    static ArraySequence<ArraySequence<int>> findSCC(const Graph<T>& graph) {
+    /**
+     * @brief Находит сильно связанные компоненты графа с использованием алгоритма Косарайю.
+     *
+     * @param graph Ориентированный граф.
+     * @return ArraySequence<ArraySequence<int>> Список сильно связанных компонент.
+     */
+    static ArraySequence<ArraySequence<int>> findSCC(const DirectedGraph<T>& graph) {
         int vertexCount = graph.getVertexCount();
-        ArraySequence<bool> visited;
-        for (int i = 0; i < vertexCount; ++i) {
-            visited.append(false);
-        }
+        ArraySequence<bool> visited(false, vertexCount);
+        //visited.resize(vertexCount, false); // Инициализация массива посещённых вершин
+        std::stack<int> finishStack;
 
-        ArraySequence<int> finishOrder;
+        // Первый проход DFS для заполнения стека порядком завершения
         for (int v = 0; v < vertexCount; ++v) {
             if (!visited[v]) {
-                fillOrder(v, graph, visited, finishOrder);
+                graphDfsFillOrder(graph, v, visited, finishStack);
             }
         }
 
-        Graph<T> transposed = getTranspose(graph);
+        // Получаем транспонированный граф
+        DirectedGraph<T> transposedGraph = getTranspose(graph);
 
-        for (int i = 0; i < vertexCount; ++i) {
+        // Сбрасываем массив посещённых вершин
+        //std::fill(visited.begin(), visited.end(), false);
+        for (int i = 0; i < visited.getLength(); ++i) {
             visited[i] = false;
+
         }
 
         ArraySequence<ArraySequence<int>> sccList;
 
-        for (int i = finishOrder.getLength() - 1; i >= 0; --i) {
-            int v = finishOrder[i];
+        // Второй проход DFS по транспонированному графу
+        while (!finishStack.empty()) {
+            int v = finishStack.top();
+            finishStack.pop();
+
             if (!visited[v]) {
                 ArraySequence<int> scc;
-                transposedDFS(v, transposed, visited, scc);
+                // Lambda-функция для добавления вершины в текущую компоненту
+                std::function<void(int)> visit = [&scc](int vertex) {
+                    scc.append(vertex);
+                };
+                transposedGraph.dfs(v, visited, visit);
                 sccList.append(scc);
             }
         }
@@ -42,48 +64,50 @@ public:
     }
 
 private:
+    /**
+     * @brief Рекурсивный вспомогательный метод для первого прохода DFS.
+     *
+     * @param graph Граф.
+     * @param vertex Текущая вершина.
+     * @param visited Массив посещённых вершин.
+     * @param finishStack Стек для хранения порядка завершения.
+     */
+    static void graphDfsFillOrder(const DirectedGraph<T>& graph, int vertex, ArraySequence<bool>& visited, std::stack<int>& finishStack) {
+        visited[vertex] = true;
 
-    static void fillOrder(int v, const Graph<T>& graph, ArraySequence<bool>& visited, ArraySequence<int>& finishOrder) {
-        visited[v] = true;
-
-        ArraySequence<Pair<int, T>> neighbors = graph.getNeighbors(v);
+        auto neighbors = graph.getNeighbors(vertex);
         for (int i = 0; i < neighbors.getLength(); ++i) {
             int neighbor = neighbors[i].first;
             if (!visited[neighbor]) {
-                fillOrder(neighbor, graph, visited, finishOrder);
+                graphDfsFillOrder(graph, neighbor, visited, finishStack);
             }
         }
 
-        finishOrder.append(v);
+        finishStack.push(vertex); // Добавляем вершину в стек после завершения
     }
 
-    static Graph<T> getTranspose(const Graph<T>& graph) {
+    /**
+     * @brief Создаёт транспонированный граф (инвертирует направления рёбер).
+     *
+     * @param graph Оригинальный граф.
+     * @return DirectedGraph<T> Транспонированный граф.
+     */
+    static DirectedGraph<T> getTranspose(const DirectedGraph<T>& graph) {
         int vertexCount = graph.getVertexCount();
-        Graph<T> transposed(vertexCount);
+        DirectedGraph<T> transposedGraph(vertexCount);
 
-        const ArraySequence<std::tuple<int, int, T>>& edges = graph.getEdges();
-        for (int i = 0; i < edges.getLength(); ++i) {
-            int from = std::get<1>(edges[i]);
-            int to = std::get<0>(edges[i]);
-            T weight = std::get<2>(edges[i]);
-            transposed.addEdge(from, to, weight);
-        }
-
-        return transposed;
-    }
-
-    static void transposedDFS(int v, const Graph<T>& graph, ArraySequence<bool>& visited, ArraySequence<int>& scc) {
-        visited[v] = true;
-        scc.append(v);
-
-        ArraySequence<Pair<int, T>> neighbors = graph.getNeighbors(v);
-        for (int i = 0; i < neighbors.getLength(); ++i) {
-            int neighbor = neighbors[i].first;
-            if (!visited[neighbor]) {
-                transposedDFS(neighbor, graph, visited, scc);
+        // Инвертируем направления всех рёбер
+        for (int u = 0; u < vertexCount; ++u) {
+            auto neighbors = graph.getNeighbors(u);
+            for (int i = 0; i < neighbors.getLength(); ++i) {
+                int v = neighbors[i].first;
+                T weight = neighbors[i].second;
+                transposedGraph.addEdge(v, u, weight); // Инвертируем ребро
             }
         }
+
+        return transposedGraph;
     }
 };
 
-#endif //LAB4_SEM3_STRONGLYCONNECTEDCOMPONENTS_H
+#endif // STRONGLY_CONNECTED_COMPONENTS_H

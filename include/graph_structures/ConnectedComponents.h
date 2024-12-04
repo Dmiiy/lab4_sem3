@@ -1,17 +1,27 @@
-#ifndef LAB4_SEM3_CONNECTEDCOMPONENTS_H
-#define LAB4_SEM3_CONNECTEDCOMPONENTS_H
+// ConnectedComponents.h
+#ifndef CONNECTED_COMPONENTS_H
+#define CONNECTED_COMPONENTS_H
 
-#include "Graph.h"
-#include <stdexcept>
+#include "UndirectedGraph.h"
+#include "../sequence/ArraySequence.h"
+#include <functional>
 
-template <typename T>
-
+/**
+ * @brief Класс для поиска компонент связности в неориентированном графе.
+ */
 class ConnectedComponents {
 public:
     ConnectedComponents() = default;
 
-
-    static ArraySequence<ArraySequence<int>> findComponents(const Graph<T>& graph) {
+    /**
+     * @brief Находит все компоненты связности в графе.
+     *
+     * @tparam T Тип веса рёбер.
+     * @param graph Неориентированный граф.
+     * @return ArraySequence<ArraySequence<int>> Список компонент связности.
+     */
+    template<typename T>
+    static ArraySequence<ArraySequence<int>> findComponents(const UndirectedGraph<T>& graph) {
         int vertexCount = graph.getVertexCount();
         ArraySequence<bool> visited;
         for (int i = 0; i < vertexCount; ++i) {
@@ -23,7 +33,11 @@ public:
         for (int v = 0; v < vertexCount; ++v) {
             if (!visited[v]) {
                 ArraySequence<int> component;
-                dfs(v, graph, visited, component);
+                // Lambda-функция для добавления вершины в текущую компоненту
+                std::function<void(int)> visit = [&component](int vertex) {
+                    component.append(vertex);
+                };
+                graph.dfs(v, visited, visit);
                 components.append(component);
             }
         }
@@ -32,21 +46,6 @@ public:
     }
 
     ~ConnectedComponents() = default;
-
-private:
-
-    static void dfs(int v, const Graph<T>& graph, ArraySequence<bool>& visited, ArraySequence<int>& component) {
-        visited[v] = true;
-        component.append(v);
-
-        ArraySequence<Pair<int, T>> neighbors = graph.getNeighbors(v);
-        for (int i = 0; i < neighbors.getLength(); ++i) {
-            int neighbor = neighbors[i].first;
-            if (!visited[neighbor]) {
-                dfs(neighbor, graph, visited, component);
-            }
-        }
-    }
 };
 
-#endif //LAB4_SEM3_CONNECTEDCOMPONENTS_H
+#endif // CONNECTED_COMPONENTS_H

@@ -8,7 +8,11 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Charts)
 
 add_executable(lab4_sem3 main.cpp
-        )
+        include/graph_structures/UndirectedGraph.h
+        include/graph_structures/Graph.h
+        include/graph_structures/UndirectedGraphShortestPath.h
+        include/graph_structures/DynamicWeightShortestPath.h
+)
 target_link_libraries(lab4_sem3
         PRIVATE
         Qt6::Core

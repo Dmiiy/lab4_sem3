@@ -1,40 +1,42 @@
-#ifndef LAB4_SEM3_SHORTESTPATH_H
-#define LAB4_SEM3_SHORTESTPATH_H
+// ShortestPath.h
+#ifndef SHORTEST_PATH_H
+#define SHORTEST_PATH_H
 
 #include "Graph.h"
+#include "../sequence/ArraySequence.h"
 #include "../sequence/PriorityQueue.h"
+#include "../sequence/Pair.h"
 #include <limits>
-#include <utility>
-
-typedef int Vertex;
-typedef double Weight;
+#include <type_traits>
+#include <functional>
+#include <stdexcept>
 
 class ShortestPath {
 public:
-    // Метод Дейкстры для поиска кратчайшего пути от источника к всем другим вершинам
-    static Pair<ArraySequence<Weight>, ArraySequence<Vertex>> dijkstra(const Graph<Weight>& graph, Vertex source) {
+    typedef int Vertex;
+    typedef double Weight;
+
+    template<typename T>
+    static Pair<ArraySequence<Weight>, ArraySequence<Vertex>> dijkstra(const Graph<T>& graph, Vertex source) {
+        static_assert(std::is_arithmetic<T>::value, "Graph weights must be numeric");
+
         int n = graph.getVertexCount();
+
         ArraySequence<Weight> distances;
         ArraySequence<Vertex> predecessors;
 
-        if(n == 0){
-            return {ArraySequence<Weight>(), ArraySequence<Vertex>()};
-        }
-
-        // Проверка валидности источника
-        if(source < 0 || source >= n){
-            throw std::out_of_range("Source vertex out of range");
-        }
-
-        // Инициализация расстояний и предшественников
         for (int i = 0; i < n; ++i) {
             distances.append(std::numeric_limits<Weight>::infinity());
             predecessors.append(-1);
         }
 
+        if (source < 0 || source >= n) {
+            throw std::out_of_range("Source vertex out of range");
+        }
+
         distances[source] = 0;
 
-        // Приоритетная очередь: пара (vertex, distance)
+        // Приоритетная очередь: пара (distance, vertex)
         PriorityQueue<Vertex, Weight> pq;
         pq.Enqueue(source, 0.0);
 
@@ -43,14 +45,13 @@ public:
             Vertex u = current.first;
             Weight dist_u = current.second;
 
-            // Если извлеченное расстояние больше текущего зарегистрированного, пропускаем
             if (dist_u > distances[u]) continue;
 
-            // Обработка соседей
-            ArraySequence<Pair<int, Weight>> neighbors = graph.getNeighbors(u);
+            auto neighbors = graph.getNeighbors(u);
             for (int i = 0; i < neighbors.getLength(); ++i) {
                 Vertex v = neighbors[i].first;
-                Weight weight = neighbors[i].second;
+                T edgeWeight = neighbors[i].second;
+                Weight weight = static_cast<Weight>(edgeWeight);
 
                 if (distances[u] + weight < distances[v]) {
                     distances[v] = distances[u] + weight;
@@ -63,8 +64,8 @@ public:
         return {distances, predecessors};
     }
 
-    // Метод для восстановления пути от источника к целевой вершине
-    static ArraySequence<Vertex> GetPath(const ArraySequence<Vertex>& predecessors, Vertex target) {
+    // Восстановление пути от источника к целевой вершине
+    static ArraySequence<Vertex> getPath(const ArraySequence<Vertex>& predecessors, Vertex target) {
         ArraySequence<Vertex> path;
         Vertex current = target;
 
@@ -77,4 +78,4 @@ public:
     }
 };
 
-#endif //LAB4_SEM3_SHORTESTPATH_H
+#endif // SHORTEST_PATH_H

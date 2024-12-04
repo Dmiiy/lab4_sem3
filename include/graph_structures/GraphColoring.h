@@ -1,62 +1,60 @@
-#ifndef LAB4_SEM3_GRAPHCOLORING_H
-#define LAB4_SEM3_GRAPHCOLORING_H
+// GraphColoring.h
+#ifndef GRAPH_COLORING_H
+#define GRAPH_COLORING_H
 
 #include "Graph.h"
 #include <algorithm>
 #include <stdexcept>
+#include "../sequence/ArraySequence.h"
+#include "../sequence/Pair.h"
 
+/**
+ * @brief Класс для раскраски графа.
+ */
 class GraphColoring {
 public:
-    static ArraySequence<int> greedyColoring(const Graph<int>& graph) {
+    /**
+     * @brief Выполняет жадную раскраску графа.
+     *
+     * @tparam T Тип веса рёбер.
+     * @param graph Граф для раскраски.
+     * @return ArraySequence<int> Список цветов для каждой вершины.
+     */
+    template<typename T>
+    static ArraySequence<int> greedyColoring(const Graph<T>& graph) {
         int n = graph.getVertexCount();
-        ArraySequence<int> result;   // Цвета вершин
+        ArraySequence<int> result(-1,n);
+        //result.resize(n, -1);   // Инициализация всех вершин как некрашенных
 
-        if(n == 0){
+        if (n == 0) {
             return result;
         }
 
-        // Инициализация массивов
-        for (int i = 0; i < n; ++i) {
-            result.append(-1); // Все вершины изначально не раскрашены
-        }
+        result[0] = 0; // Присваиваем первый цвет первой вершине
 
-        result[0] = 0; // Первой вершине присваиваем первый цвет
-
+        // Для каждой вершины выбираем наименьший доступный цвет
         for (int u = 1; u < n; ++u) {
-            // Создаем массив доступных цветов и инициализируем все как доступные
-            ArraySequence<bool> available;
-            for(int i = 0; i < n; ++i){
-                available.append(true);
-            }
+            ArraySequence<bool> available(true,n); // Массив доступных цветов
 
-            ArraySequence<Pair<int, int>> neighbors = graph.getNeighbors(u);
+            ArraySequence<Pair<int, T>> neighbors = graph.getNeighbors(u);
 
-            // Помечаем занятые цвета соседями
+            // Помечаем недоступные цвета, занятые соседями
             for (int i = 0; i < neighbors.getLength(); ++i) {
                 int neighbor = neighbors[i].first;
 
-                // Проверка корректности индекса соседа
-                if(neighbor < 0 || neighbor >= n){
+                if (neighbor < 0 || neighbor >= n) {
                     throw std::out_of_range("Neighbor index out of range");
                 }
 
                 if (result[neighbor] != -1) {
-                    if(result[neighbor] < available.getLength()){
-                        available[result[neighbor]] = false;
-                    }
+                    available[result[neighbor]] = false;
                 }
             }
 
-            // Выбираем первый доступный цвет
+            // Находим первый доступный цвет
             int color = 0;
-            while (color < available.getLength() && !available[color]) {
+            while (color < n && !available[color]) {
                 ++color;
-            }
-
-            // Если все существующие цвета заняты, добавляем новый цвет
-            if(color >= available.getLength()){
-                color = available.getLength();
-                available.append(false); // Добавляем новый цвет как занятый
             }
 
             result[u] = color;
@@ -66,4 +64,4 @@ public:
     }
 };
 
-#endif //LAB4_SEM3_GRAPHCOLORING_H
+#endif // GRAPH_COLORING_H

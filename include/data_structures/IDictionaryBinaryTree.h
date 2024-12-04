@@ -11,7 +11,7 @@ class IDictionaryBinaryTree : public IDictionary<TKey, TValue> {
         TKey key;
         TValue value;
 
-        KeyValuePair(TKey k, TValue v) : key(k), value(v) {}
+        KeyValuePair(const TKey& k, const TValue& v) : key(k), value(v) {}
 
         bool operator<(const KeyValuePair &other) const {
             return key < other.key;
@@ -24,9 +24,11 @@ class IDictionaryBinaryTree : public IDictionary<TKey, TValue> {
         bool operator==(const KeyValuePair &other) const {
             return key == other.key;
         }
+
         bool operator<=(const KeyValuePair &other) const {
             return key <= other.key;
         }
+
         bool operator>=(const KeyValuePair &other) const {
             return key >= other.key;
         }
@@ -35,10 +37,32 @@ class IDictionaryBinaryTree : public IDictionary<TKey, TValue> {
     AVLBinaryTree<KeyValuePair> tree;
 
 public:
-    // Constructor
+    // Конструктор по умолчанию
     IDictionaryBinaryTree() = default;
 
-    // Get value by key
+    // Конструктор копирования
+    IDictionaryBinaryTree(const IDictionaryBinaryTree& other) : tree(other.tree) {}
+
+    // Оператор присваивания
+    IDictionaryBinaryTree& operator=(const IDictionaryBinaryTree& other) {
+        if (this != &other) {
+            tree = other.tree;
+        }
+        return *this;
+    }
+
+    // Конструктор перемещения
+    IDictionaryBinaryTree(IDictionaryBinaryTree&& other) noexcept : tree(std::move(other.tree)) {}
+
+    // Оператор перемещения
+    IDictionaryBinaryTree& operator=(IDictionaryBinaryTree&& other) noexcept {
+        if (this != &other) {
+            tree = std::move(other.tree);
+        }
+        return *this;
+    }
+
+    // Получение значения по ключу
     TValue Get(const TKey &key) const override {
         auto node = tree.findRef(KeyValuePair(key, TValue()));
         if (!node) {
@@ -47,7 +71,7 @@ public:
         return node->value.value;
     }
 
-    // Get value by key (pointer)
+    // Получение ссылки на значение по ключу
     TValue& GetReference(const TKey &key) {
         auto node = tree.findRef(KeyValuePair(key, TValue()));
         if (!node) {
@@ -63,12 +87,13 @@ public:
         }
         return node->value.value;
     }
-    // Check if key exists
+
+    // Проверка наличия ключа
     bool ContainsKey(const TKey &key) const override {
         return tree.find(KeyValuePair(key, TValue()));
     }
 
-    // Add key-value pair
+    // Добавление пары ключ-значение
     void Add(const TKey &key, const TValue &value) override {
         if (ContainsKey(key)) {
             throw std::invalid_argument("Key already exists");
@@ -76,7 +101,7 @@ public:
         tree.insert(KeyValuePair(key, value));
     }
 
-    // Remove key-value pair
+    // Удаление по ключу
     void Remove(const TKey &key) override {
         if (!ContainsKey(key)) {
             throw std::out_of_range("Key not found");
@@ -84,12 +109,18 @@ public:
         tree.remove(KeyValuePair(key, TValue()));
     }
 
-    // Get count of elements
+    // Очистка словаря
+    void Clear() {
+        tree.~AVLBinaryTree();
+        new (&tree) AVLBinaryTree<KeyValuePair>();
+    }
+
+    // Получение количества элементов
     size_t GetCount() const override {
         return tree.getSize();
     }
 
-    // Get all keys
+    // Получение всех ключей
     ArraySequence<TKey> GetKeys() const override {
         ArraySequence<TKey> keys;
         for (const auto &pair : tree) {
@@ -98,7 +129,7 @@ public:
         return keys;
     }
 
-    // Get all values
+    // Получение всех значений
     ArraySequence<TValue> GetValues() const override {
         ArraySequence<TValue> values;
         for (const auto &pair : tree) {
@@ -107,23 +138,19 @@ public:
         return values;
     }
 
+    // Итератор
     class Iterator {
-        typename AVLBinaryTree<KeyValuePair>::Iterator iterator;
+        using TreeIterator = typename AVLBinaryTree<KeyValuePair>::Iterator;
+        TreeIterator iterator;
     public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = KeyValuePair;
-        using pointer = KeyValuePair*;
-        using reference = KeyValuePair&;
+        explicit Iterator(TreeIterator it) : iterator(it) {}
 
-        explicit Iterator(typename AVLBinaryTree<KeyValuePair>::Iterator it) : iterator(it) {}
-
-        reference operator*() const {
+        KeyValuePair& operator*() const {
             return *iterator;
         }
 
-        pointer operator->() {
-            return iterator.operator->();
+        KeyValuePair* operator->() {
+            return &(*iterator);
         }
 
         Iterator& operator++() {
@@ -131,18 +158,8 @@ public:
             return *this;
         }
 
-        Iterator operator++(int) {
-            Iterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-
-        friend bool operator==(const Iterator &a, const Iterator &b) {
-            return a.iterator == b.iterator;
-        }
-
-        friend bool operator!=(const Iterator &a, const Iterator &b) {
-            return a.iterator != b.iterator;
+        bool operator!=(const Iterator &other) const {
+            return iterator != other.iterator;
         }
     };
 

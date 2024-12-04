@@ -18,6 +18,7 @@ public:
 
     // Constructor with items and count
     ArraySequence(T *items, int count) : data(items, count) {}
+    ArraySequence(T items, int count) : data(items, count) {}
 
     // Default constructor
     ArraySequence() : data() {}

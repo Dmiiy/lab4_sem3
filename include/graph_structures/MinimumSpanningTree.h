@@ -1,67 +1,83 @@
+// MinimumSpanningTree.h
 #ifndef LAB4_SEM3_MINIMUMSPANNINGTREE_H
 #define LAB4_SEM3_MINIMUMSPANNINGTREE_H
 
-#include "Graph.h"
-#include <algorithm>
+#include "UndirectedGraph.h"
 #include <functional>
 #include "QuickSorter.h"
+#include "../sequence/ArraySequence.h"
+#include <tuple>
+
+/**
+ * @brief Класс для поиска минимального остова графа.
+ */
 template <typename T>
 class MinimumSpanningTree {
 public:
-    // Метод для поиска минимального остова с использованием алгоритма Крускала
-    static ArraySequence<std::tuple<int, int, T>> kruskal(int vertices, const Graph<T>& graph) {
-        ArraySequence<int> parent;  // Массив родительских вершин для объединения
+    /**
+     * @brief Находит минимальный остов графа с использованием алгоритма Крускала.
+     *
+     * @param graph Неориентированный граф.
+     * @return ArraySequence<std::tuple<int, int, T>> Список рёбер минимального остова.
+     */
+    static ArraySequence<std::tuple<int, int, T>> kruskal(const UndirectedGraph<T>& graph) {
+        int vertices = graph.getVertexCount();
+        ArraySequence<int> parent;
+//        parent.resize(vertices);
+
+        // Инициализируем каждую вершину как своего родителя
         for (int i = 0; i < vertices; ++i) {
-            parent.append(i);  // Изначально каждая вершина является своим родителем
+            parent.append(i);
         }
 
-        // Используем std::function для рекурсивного вызова find
+        // Функция для нахождения корня сжатия пути
         std::function<int(int)> find = [&](int v) -> int {
             if (parent[v] != v) {
-                parent[v] = find(parent[v]);  // Поиск сжатия пути
+                parent[v] = find(parent[v]);  // Сжатие пути
             }
             return parent[v];
         };
 
-        auto unite = [&](int u, int v) {
+        // Функция для объединения двух множеств
+        std::function<void(int, int)> unite = [&](int u, int v) {
             int rootU = find(u);
             int rootV = find(v);
             if (rootU != rootV) {
-                parent[rootU] = rootV;  // Объединение двух компонент
+                parent[rootU] = rootV;  // Объединение деревьев
             }
         };
 
-        // Получаем рёбра из графа
-        ArraySequence<std::tuple<int, int, T>> mst;  // Для хранения рёбер минимального остова
+        // Получаем все рёбра из графа
+        ArraySequence<std::tuple<int, int, T>> mst;  // Минимальный остов
         ArraySequence<std::tuple<int, int, T>> edges = graph.getEdges();
 
-        // Сортируем рёбра по весу
-        ArraySequence<std::tuple<int, int, T>> sortedEdges = edges;
+        // Сортируем рёбра по весу с помощью быстрого сортировщика
         QuickSorter<std::tuple<int, int, T>> sorter([](const std::tuple<int, int, T>& a, const std::tuple<int, int, T>& b) {
-            return std::get<2>(a) < std::get<2>(b);  // Сортировка по весу рёбер
+            return std::get<2>(a) < std::get<2>(b);  // Сортировка по весу
         });
 
-        sorter.sort(&sortedEdges);
+        sorter.sort(&edges);
 
-
-        // Проходим по отсортированным рёбрам и строим минимальный остов
-        for (int i = 0; i < sortedEdges.getLength(); ++i) {
-            const auto& edge = sortedEdges[i];
+        // Проходим по отсортированным рёбрам и добавляем их в остов
+        for (int i = 0; i < edges.getLength(); ++i) {
+            const auto& edge = edges[i];
             int u = std::get<0>(edge);
             int v = std::get<1>(edge);
             T weight = std::get<2>(edge);
 
             if (find(u) != find(v)) {
-                mst.append(edge);  // Добавляем ребро в минимальный остов
-                unite(u, v);  // Объединяем компоненты
+                mst.append(edge);      // Добавляем ребро в остов
+                unite(u, v);           // Объединяем компоненты
+
+                // Если остов содержит (vertices - 1) рёбер, алгоритм завершается
                 if (mst.getLength() == vertices - 1) {
-                    break; // Остов построен
+                    break;
                 }
             }
         }
 
-        return mst;  // Возвращаем найденный минимальный остов
+        return mst;  // Возвращаем минимальный остов
     }
 };
 
-#endif //LAB4_SEM3_MINIMUMSPANNINGTREE_H
+#endif // LAB4_SEM3_MINIMUMSPANNINGTREE_H

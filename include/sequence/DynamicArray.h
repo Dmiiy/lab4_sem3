@@ -59,6 +59,15 @@ public:
             defined[i] = true;
         }
     }
+    DynamicArray(T items, int count) : size(count), capacity(count) {
+        if (size < 0) throw std::invalid_argument("Size < 0");
+        data = new T[capacity];
+        defined = new bool[capacity];
+        for (int i = 0; i < size; ++i) {
+            data[i] = items;
+            defined[i] = true;
+        }
+    }
 
     // Default constructor with optional initial count
     explicit DynamicArray(int count = 0) : size(count), capacity(count > 0 ? count : 1) {
