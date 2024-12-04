@@ -1,4 +1,3 @@
-// Lattice.h
 #ifndef LATTICE_H
 #define LATTICE_H
 
@@ -9,16 +8,37 @@
 #include <functional>
 #include <optional>
 #include <iostream>
+#include <stdexcept>
 
 template<typename T>
 class Lattice {
 private:
-    DirectedGraph<int> hasseDiagram; // Использование DirectedGraph с индексами
+    DirectedGraph<T> hasseDiagram; // Использование DirectedGraph с индексами
     bool isExplicit;
     std::function<bool(const T&, const T&)> relation; // Отношение для неявной диаграммы Хассе
     ArraySequence<T> elements; // Элементы решётки
     IDictionaryBinaryTree<T, int> elementToIndex; // Отображение элемента в индекс
     ArraySequence<T> indexToElement;
+
+    // Реализация метода hasPath с использованием DFS
+    bool hasPath(int src, int dest, ArraySequence<bool>& visited) const {
+        if (src == dest) {
+            return true;
+        }
+
+        visited[src] = true;
+
+        ArraySequence<Pair<int, int>> neighbors = hasseDiagram.getNeighbors(src);
+        for (int i = 0; i < neighbors.getLength(); ++i) {
+            int neighbor = neighbors.get(i).first;
+            if (!visited.get(neighbor)) {
+                if (hasPath(neighbor, dest, visited)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
 public:
     // Конструктор для явной диаграммы Хассе
@@ -26,7 +46,10 @@ public:
             : hasseDiagram(diagram), isExplicit(true), elements(elems) {
         int n = elements.getLength();
         for (int i = 0; i < n; ++i) {
-            T elem = elements[i];
+            T elem = elements.get(i);
+            if (elementToIndex.ContainsKey(elem)) {
+                throw std::invalid_argument("Duplicate element in elements array.");
+            }
             elementToIndex.Add(elem, i);
             indexToElement.append(elem);
         }
@@ -37,22 +60,25 @@ public:
             : hasseDiagram(elems.getLength()), isExplicit(false), relation(rel), elements(elems) {
         int n = elems.getLength();
         for (int i = 0; i < n; ++i) {
-            T elem = elements[i];
+            T elem = elements.get(i);
+            if (elementToIndex.ContainsKey(elem)) {
+                throw std::invalid_argument("Duplicate element in elements array.");
+            }
             elementToIndex.Add(elem, i);
             indexToElement.append(elem);
         }
 
         // Построение диаграммы Хассе на основе отношения
         for (int i = 0; i < n; ++i) {
-            T a = elements[i];
+            T a = elements.get(i);
             for (int j = 0; j < n; ++j) {
-                T b = elements[j];
+                T b = elements.get(j);
                 if (i != j && relation(a, b)) {
                     // Проверка на отсутствие промежуточных элементов
                     bool directRelation = true;
                     for (int k = 0; k < n; ++k) {
                         if (k != i && k != j) {
-                            T c = elements[k];
+                            T c = elements.get(k);
                             if (relation(a, c) && relation(c, b)) {
                                 directRelation = false;
                                 break;
@@ -70,61 +96,17 @@ public:
     // Метод для проверки отношения a <= b
     bool lessEqual(const T& a, const T& b) const {
         if (!elementToIndex.ContainsKey(a) || !elementToIndex.ContainsKey(b)) {
-            return false;
+            throw std::invalid_argument("Element not found in lattice.");
         }
         int indexA = elementToIndex.Get(a);
         int indexB = elementToIndex.Get(b);
-        return hasseDiagram.hasPath(indexA, indexB);
-    }
 
-    // Нахождение наибольшей нижней грани (meet)
-    std::optional<T> meet(const T& a, const T& b) const {
-        ArraySequence<T> candidates;
-        int n = elements.getLength();
-        // Поиск общих нижних границ
-        for (int i = 0; i < n; ++i) {
-            T c = elements[i];
-            if (lessEqual(c, a) && lessEqual(c, b)) {
-                candidates.append(c);
-            }
+        ArraySequence<bool> visited;
+        for(int i = 0; i < elements.getLength(); ++i){
+            visited.append(false);
         }
-        if (candidates.getLength() == 0) {
-            return std::nullopt;
-        }
-        // Нахождение наибольшего среди кандидатов
-        T glb = candidates[0];
-        for (int i = 1; i < candidates.getLength(); ++i) {
-            T c = candidates[i];
-            if (lessEqual(glb, c)) {
-                glb = c;
-            }
-        }
-        return glb;
-    }
 
-    // Нахождение наименьшей верхней грани (join)
-    std::optional<T> join(const T& a, const T& b) const {
-        ArraySequence<T> candidates;
-        int n = elements.getLength();
-        // Поиск общих верхних границ
-        for (int i = 0; i < n; ++i) {
-            T c = elements[i];
-            if (lessEqual(a, c) && lessEqual(b, c)) {
-                candidates.append(c);
-            }
-        }
-        if (candidates.getLength() == 0) {
-            return std::nullopt;
-        }
-        // Нахождение наименьшего среди кандидатов
-        T lub = candidates[0];
-        for (int i = 1; i < candidates.getLength(); ++i) {
-            T c = candidates[i];
-            if (lessEqual(c, lub)) {
-                lub = c;
-            }
-        }
-        return lub;
+        return hasPath(indexA, indexB, visited);
     }
 
     DirectedGraph<int> getHasseDiagram() const {
@@ -134,11 +116,11 @@ public:
     void printHasseDiagram() const {
         std::cout << "Hasse Diagram:" << std::endl;
         for (int i = 0; i < hasseDiagram.getVertexCount(); ++i) {
-            auto neighbors = hasseDiagram.getNeighbors(i);
+            ArraySequence<Pair<int, int>> neighbors = hasseDiagram.getNeighbors(i);
             for (int j = 0; j < neighbors.getLength(); ++j) {
                 int from = i;
-                int to = neighbors[j].first;
-                std::cout << indexToElement[from] << " -> " << indexToElement[to] << std::endl;
+                int to = neighbors.get(j).first;
+                std::cout << indexToElement.get(from) << " -> " << indexToElement.get(to) << std::endl;
             }
         }
     }

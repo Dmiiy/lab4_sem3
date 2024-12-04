@@ -1,14 +1,20 @@
-// StronglyConnectedComponents.h
 #ifndef STRONGLY_CONNECTED_COMPONENTS_H
 #define STRONGLY_CONNECTED_COMPONENTS_H
 
 #include "DirectedGraph.h"
 #include "../sequence/ArraySequence.h"
 #include <functional>
-#include <stack>
+#include <stdexcept>
 
 /**
  * @brief Класс для поиска сильно связанных компонент в ориентированном графе.
+ *
+ * Этот класс реализует алгоритм Косарайю для нахождения всех сильно связанных компонент
+ * в заданном ориентированном графе. Сильно связанные компоненты представляют собой
+ * подмножества вершин, где каждая вершина достижима из любой другой вершины внутри
+ * этого множества.
+ *
+ * @tparam T Тип данных, ассоциированный с рёбрами графа (например, вес рёбер).
  */
 template <typename T>
 class StronglyConnectedComponents {
@@ -16,98 +22,82 @@ public:
     /**
      * @brief Находит сильно связанные компоненты графа с использованием алгоритма Косарайю.
      *
-     * @param graph Ориентированный граф.
-     * @return ArraySequence<ArraySequence<int>> Список сильно связанных компонент.
+     * Метод выполняет два прохода глубинного обхода (DFS). Первый проход используется
+     * для определения порядка завершения обхода вершин, а второй проход выполняется
+     * на транспонированном графе для выявления сильно связанных компонент.
+     *
+     * @param graph Ориентированный граф, в котором необходимо найти сильно связанные компоненты.
+     * @return ArraySequence<ArraySequence<int>> Список сильно связанных компонент,
+     * каждая из которых представлена списком вершин.
      */
     static ArraySequence<ArraySequence<int>> findSCC(const DirectedGraph<T>& graph) {
         int vertexCount = graph.getVertexCount();
-        ArraySequence<bool> visited(false, vertexCount);
-        //visited.resize(vertexCount, false); // Инициализация массива посещённых вершин
-        std::stack<int> finishStack;
+        ArraySequence<bool> visited; // Массив посещённых вершин
 
-        // Первый проход DFS для заполнения стека порядком завершения
-        for (int v = 0; v < vertexCount; ++v) {
-            if (!visited[v]) {
-                graphDfsFillOrder(graph, v, visited, finishStack);
+        // Инициализируем массив посещённых вершин значениями false
+        for(int i = 0; i < vertexCount; ++i){
+            visited.append(false);
+        }
+
+        ArraySequence<int> finishOrder; // Порядок завершения обхода
+
+        // Первый проход DFS для заполнения порядка завершения
+        std::function<void(int)> dfs_first_pass = [&](int v) {
+            visited[v] = true;
+            auto neighbors = graph.getNeighbors(v);
+            for(int i = 0; i < neighbors.getLength(); ++i){
+                int neighbor = neighbors[i].first;
+                if(!visited[neighbor]){
+                    dfs_first_pass(neighbor);
+                }
+            }
+            finishOrder.append(v); // Добавляем вершину после обхода её соседей
+        };
+
+        // Запуск первого прохода DFS для всех непосещённых вершин
+        for(int v = 0; v < vertexCount; ++v){
+            if(!visited[v]){
+                dfs_first_pass(v);
             }
         }
 
-        // Получаем транспонированный граф
-        DirectedGraph<T> transposedGraph = getTranspose(graph);
+        // Получаем транспонированный граф (граф с инвертированными рёбрами)
+        DirectedGraph<T> transposedGraph = graph.getTranspose(graph);
 
-        // Сбрасываем массив посещённых вершин
-        //std::fill(visited.begin(), visited.end(), false);
-        for (int i = 0; i < visited.getLength(); ++i) {
+        // Сбрасываем массив посещённых вершин для второго прохода
+        for(int i = 0; i < vertexCount; ++i){
             visited[i] = false;
-
         }
 
-        ArraySequence<ArraySequence<int>> sccList;
+        ArraySequence<ArraySequence<int>> sccList; // Список сильно связанных компонент
 
-        // Второй проход DFS по транспонированному графу
-        while (!finishStack.empty()) {
-            int v = finishStack.top();
-            finishStack.pop();
-
-            if (!visited[v]) {
+        // Второй проход DFS по транспонированному графу в порядке обратном завершения
+        for(int i = finishOrder.getLength() - 1; i >=0; --i){
+            int v = finishOrder[i];
+            if(!visited[v]){
                 ArraySequence<int> scc;
-                // Lambda-функция для добавления вершины в текущую компоненту
-                std::function<void(int)> visit = [&scc](int vertex) {
-                    scc.append(vertex);
+
+                // Второй проход DFS для сбора вершин текущей компоненты
+                std::function<void(int)> dfs_second_pass = [&](int u) {
+                    visited[u] = true;
+                    scc.append(u);
+                    auto neighbors = transposedGraph.getNeighbors(u);
+                    for(int j = 0; j < neighbors.getLength(); ++j){
+                        int neighbor = neighbors[j].first;
+                        if(!visited[neighbor]){
+                            dfs_second_pass(neighbor);
+                        }
+                    }
                 };
-                transposedGraph.dfs(v, visited, visit);
-                sccList.append(scc);
+
+                dfs_second_pass(v);
+                sccList.append(scc); // Добавляем найденную компоненту в список
             }
         }
 
-        return sccList;
+        return sccList; // Возвращаем список всех сильно связанных компонент
     }
 
-private:
-    /**
-     * @brief Рекурсивный вспомогательный метод для первого прохода DFS.
-     *
-     * @param graph Граф.
-     * @param vertex Текущая вершина.
-     * @param visited Массив посещённых вершин.
-     * @param finishStack Стек для хранения порядка завершения.
-     */
-    static void graphDfsFillOrder(const DirectedGraph<T>& graph, int vertex, ArraySequence<bool>& visited, std::stack<int>& finishStack) {
-        visited[vertex] = true;
-
-        auto neighbors = graph.getNeighbors(vertex);
-        for (int i = 0; i < neighbors.getLength(); ++i) {
-            int neighbor = neighbors[i].first;
-            if (!visited[neighbor]) {
-                graphDfsFillOrder(graph, neighbor, visited, finishStack);
-            }
-        }
-
-        finishStack.push(vertex); // Добавляем вершину в стек после завершения
-    }
-
-    /**
-     * @brief Создаёт транспонированный граф (инвертирует направления рёбер).
-     *
-     * @param graph Оригинальный граф.
-     * @return DirectedGraph<T> Транспонированный граф.
-     */
-    static DirectedGraph<T> getTranspose(const DirectedGraph<T>& graph) {
-        int vertexCount = graph.getVertexCount();
-        DirectedGraph<T> transposedGraph(vertexCount);
-
-        // Инвертируем направления всех рёбер
-        for (int u = 0; u < vertexCount; ++u) {
-            auto neighbors = graph.getNeighbors(u);
-            for (int i = 0; i < neighbors.getLength(); ++i) {
-                int v = neighbors[i].first;
-                T weight = neighbors[i].second;
-                transposedGraph.addEdge(v, u, weight); // Инвертируем ребро
-            }
-        }
-
-        return transposedGraph;
-    }
 };
 
 #endif // STRONGLY_CONNECTED_COMPONENTS_H

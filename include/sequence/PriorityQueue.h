@@ -1,7 +1,7 @@
 #ifndef LAB4_SEM3_PRIORITYQUEUE_H
 #define LAB4_SEM3_PRIORITYQUEUE_H
 
-#include "ArraySequence.h"
+#include "../data_structures/AVLBinaryTree.h"
 #include "Pair.h"
 #include "Sequence.h"
 #include <stdexcept>
@@ -9,7 +9,7 @@
 template<typename T, typename K>
 class PriorityQueue : public Sequence<Pair<T, K>> {
 private:
-    ArraySequence<Pair<T, K>> data;
+    AVLBinaryTree<Pair<T, K>> data;
 
     Pair<T, K> get(int index) const override {
         throw std::invalid_argument("Operation not supported");
@@ -68,70 +68,70 @@ private:
     }
 
 public:
-
     PriorityQueue() = default;
 
-    // Метод добавления элемента с приоритетом
     void Enqueue(T item, K priority) {
         Pair<T, K> newPair(item, priority);
-        int i = 0;
-        while (i < data.getLength() && data[i].second >= priority) {
-            ++i;
-        }
-        data.insertAt(newPair, i);
+        data.insert(newPair);
     }
 
-    // Метод удаления и возврата элемента с наивысшим приоритетом
     Pair<T, K> Dequeue() {
-        if (data.getLength() == 0) {
+        if (data.getSize() == 0) {
             throw std::out_of_range("Queue is empty");
         }
-        Pair<T, K> item = data.getFirst();
-        data.removeAt(0);
-        return item;
+        Pair<T, K> maxItem = data.getMax();
+        data.remove(maxItem);
+        return maxItem;
     }
 
-    // Метод просмотра элемента по индексу
     Pair<T, K> Peek(int index) const {
-        if (index < 0 || index >= data.getLength()) {
+        if (data.getSize() == 0) {
+            throw std::out_of_range("Queue is empty");
+        }
+
+        auto it = data.begin();
+        for (int i = 0; i < index && it != data.end(); ++i) {
+            ++it;
+        }
+
+        if (it == data.end()) {
             throw std::out_of_range("Index out of range");
         }
-        return data.get(index);
+
+        return *it;
     }
 
-    // Метод просмотра первого элемента (с наивысшим приоритетом)
     Pair<T, K> PeekFirst() const {
-        if (data.getLength() == 0) {
+        if (data.getSize() == 0) {
             throw std::out_of_range("Queue is empty");
         }
-        return data.getFirst();
+        return data.getMax();
     }
 
-    // Метод просмотра последнего элемента
     Pair<T, K> PeekLast() const {
-        if (data.getLength() == 0) {
+        if (data.getSize() == 0) {
             throw std::out_of_range("Queue is empty");
         }
-        return data.getLast();
+        return data.getMin();
     }
 
     bool isEmpty() const {
-        return data.getLength() == 0;
+        return data.getSize() == 0;
     }
 
     int size() const {
-        return data.getLength();
+        return data.getSize();
     }
 
     void clear() override {
-        data.clear();
+        data = AVLBinaryTree<Pair<T, K>>();
     }
 
     int getLength() const override {
-        return data.getLength();
+        return data.getSize();
     }
 
-    virtual ~PriorityQueue()  {}
+    virtual ~PriorityQueue() {}
 };
 
 #endif //LAB4_SEM3_PRIORITYQUEUE_H

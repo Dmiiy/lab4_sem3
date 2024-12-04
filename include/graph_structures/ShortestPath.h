@@ -11,70 +11,147 @@
 #include <functional>
 #include <stdexcept>
 
+/**
+ * @brief Класс для поиска кратчайших путей в графе с помощью алгоритма Дейкстры.
+ *
+ * Класс `ShortestPath` предоставляет статические методы для выполнения алгоритма Дейкстры
+ * и восстановления кратчайшего пути от одного узла до другого в взвешенном графе.
+ */
 class ShortestPath {
 public:
-    typedef int Vertex;
-    typedef double Weight;
+    typedef int Vertex;    /**< Тип для обозначения вершины графа. */
+    typedef double Weight; /**< Тип для обозначения веса ребра. */
 
+    /**
+     * @brief Реализация алгоритма Дейкстры для поиска кратчайших путей от источника до всех вершин графа.
+     *
+     * Метод `dijkstra` вычисляет кратчайшие расстояния от заданного источника до всех других вершин
+     * графа с использованием алгоритма Дейкстры. Он также сохраняет информацию о предшествующих
+     * вершинах для восстановления путей.
+     *
+     * @tparam T Тип веса ребра в графе (должен быть числовым).
+     * @param graph Ссылка на граф, в котором выполняется поиск.
+     * @param source Исходная вершина (источник).
+     * @return ArraySequence<Pair<Weight, Vertex>> Последовательность пар, где каждая пара содержит
+     *                                            расстояние от источника и предшествующую вершину для каждой вершины графа.
+     *
+     * @throws std::out_of_range Если исходная вершина находится вне допустимого диапазона.
+     * @throws static_assert Если тип веса ребра не является числовым.
+     */
     template<typename T>
-    static Pair<ArraySequence<Weight>, ArraySequence<Vertex>> dijkstra(const Graph<T>& graph, Vertex source) {
+    static ArraySequence<Pair<Weight, Vertex>> dijkstra(const Graph<T>& graph, Vertex source) {
+        // Проверка, что тип T является арифметическим (числовым)
         static_assert(std::is_arithmetic<T>::value, "Graph weights must be numeric");
 
-        int n = graph.getVertexCount();
+        int n = graph.getVertexCount(); /**< Получаем количество вершин в графе. */
 
-        ArraySequence<Weight> distances;
-        ArraySequence<Vertex> predecessors;
+        // Инициализация массивов расстояний и предшественников
+        ArraySequence<Weight> distances;     /**< Массив для хранения кратчайших расстояний до вершин. */
+        ArraySequence<Vertex> predecessors;   /**< Массив для хранения предшествующих вершин для восстановления пути. */
 
         for (int i = 0; i < n; ++i) {
-            distances.append(std::numeric_limits<Weight>::infinity());
-            predecessors.append(-1);
+            distances.append(std::numeric_limits<Weight>::infinity()); /**< Устанавливаем расстояние до всех вершин как бесконечность. */
+            predecessors.append(-1); /**< Инициализируем предшественников как -1 (нет предшественника). */
         }
 
+        // Проверка валидности исходной вершины
         if (source < 0 || source >= n) {
-            throw std::out_of_range("Source vertex out of range");
+            throw std::out_of_range("Source vertex out of range"); /**< Выбрасываем исключение, если исходная вершина недопустима. */
         }
 
-        distances[source] = 0;
+        distances[source] = 0; /**< Расстояние до источника равно 0. */
 
-        // Приоритетная очередь: пара (distance, vertex)
-        PriorityQueue<Vertex, Weight> pq;
-        pq.Enqueue(source, 0.0);
+        // Приоритетная очередь вершин, сортируемых по текущему известному расстоянию от источника
+        PriorityQueue<Vertex, Weight> pq; /**< Приоритетная очередь для выбора вершины с минимальным расстоянием. */
+        pq.Enqueue(source, 0.0); /**< Добавляем исходную вершину в очередь с приоритетом 0.0. */
 
+        /**
+         * @brief Основной цикл алгоритма Дейкстры.
+         *
+         * В каждом шаге извлекается вершина с наименьшим текущим расстоянием,
+         * и расстояния до её соседей обновляются при необходимости.
+         */
         while (!pq.isEmpty()) {
-            Pair<Vertex, Weight> current = pq.Dequeue();
-            Vertex u = current.first;
-            Weight dist_u = current.second;
+            auto current = pq.Dequeue(); /**< Извлекаем вершину с минимальным расстоянием. */
+            Vertex u = current.first;    /**< Текущая вершина. */
+            Weight dist_u = current.second; /**< Текущее известное расстояние до вершины u. */
 
+            // Если извлечённое расстояние больше известного, пропускаем вершину
             if (dist_u > distances[u]) continue;
 
+            // Получаем соседей текущей вершины
             auto neighbors = graph.getNeighbors(u);
-            for (int i = 0; i < neighbors.getLength(); ++i) {
-                Vertex v = neighbors[i].first;
-                T edgeWeight = neighbors[i].second;
-                Weight weight = static_cast<Weight>(edgeWeight);
 
+            /**
+             * @brief Итерация по всем соседям текущей вершины.
+             *
+             * Для каждого соседа проверяем, можно ли улучшить путь до него через текущую вершину.
+             */
+            for (int i = 0; i < neighbors.getLength(); ++i) {
+                Vertex v = neighbors[i].first;       /**< Соседняя вершина. */
+                Weight edgeWeight = neighbors[i].second; /**< Вес ребра от u до v. */
+
+                Weight weight = static_cast<Weight>(edgeWeight); /**< Приведение типа веса к double. */
+
+                /**
+                 * @brief Проверяем, можно ли улучшить путь до соседа через текущую вершину.
+                 *
+                 * Если новое расстояние до соседа меньше ранее известного, обновляем его.
+                 */
                 if (distances[u] + weight < distances[v]) {
-                    distances[v] = distances[u] + weight;
-                    predecessors[v] = u;
-                    pq.Enqueue(v, distances[v]);
+                    distances[v] = distances[u] + weight; /**< Обновляем расстояние до соседа. */
+                    predecessors[v] = u;                   /**< Обновляем предшественника соседа. */
+                    pq.Enqueue(v, distances[v]);           /**< Добавляем/обновляем соседнюю вершину в очереди. */
                 }
             }
         }
 
-        return {distances, predecessors};
-    }
-
-    // Восстановление пути от источника к целевой вершине
-    static ArraySequence<Vertex> getPath(const ArraySequence<Vertex>& predecessors, Vertex target) {
-        ArraySequence<Vertex> path;
-        Vertex current = target;
-
-        while (current != -1) {
-            path.prepend(current);
-            current = predecessors[current];
+        /**
+         * @brief Формирование результата: для каждой вершины сохраняем расстояние и предшественника.
+         *
+         * Создаём последовательность пар, где каждая пара содержит
+         * расстояние от источника и предшествующую вершину для каждой вершины.
+         */
+        ArraySequence<Pair<Weight, Vertex>> result; /**< Результирующая последовательность пар расстояние-предшественник. */
+        for (int i = 0; i < n; ++i) {
+            result.append(Pair<Weight, Vertex>(distances[i], predecessors[i])); /**< Добавляем пары в результат. */
         }
 
-        return path;
+        return result; /**< Возвращаем результат. */
+    }
+
+    /**
+     * @brief Восстанавливает путь от источника до целевой вершины.
+     *
+     * Метод `getPath` выполняет восстановление пути от исходной вершины до заданной целевой вершины
+     * с использованием информации о предшественниках, полученной из алгоритма Дейкстры.
+     *
+     * @param data Последовательность пар расстояний и предшественников для каждой вершины.
+     * @param target Целевая вершина, до которой требуется восстановить путь.
+     * @return ArraySequence<Vertex> Последовательность вершин, представляющая путь от источника до целевой вершины.
+     *
+     * @throws std::out_of_range Если целевая вершина недостижима из источника.
+     */
+    static ArraySequence<Vertex> getPath(const ArraySequence<Pair<Weight, Vertex>>& data, Vertex target) {
+        ArraySequence<Vertex> path; /**< Последовательность вершин пути. */
+        Vertex current = target;   /**< Начинаем восстановление пути с целевой вершины. */
+
+        /**
+         * @brief Построение пути путем перехода от целевой вершины к исходной через предшественников.
+         *
+         * Добавляем вершины в путь в обратном порядке (от цели к источнику).
+         */
+        while (current != -1) {
+            path.prepend(current);        /**< Добавляем вершину в начало пути. */
+            current = data[current].second; /**< Переходим к предшественнику текущей вершины. */
+
+            // Если предшественник не найден и текущая вершина не является источником, путь невозможен
+            if (current == -1 && path.get(0) != target) {
+                throw std::out_of_range("No path exists to the target vertex."); /**< Выбрасываем исключение при отсутствии пути. */
+            }
+        }
+
+        return path; /**< Возвращаем восстановленный путь. */
     }
 };
 

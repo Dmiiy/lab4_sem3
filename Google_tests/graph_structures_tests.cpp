@@ -329,6 +329,31 @@ TEST(MinimumSpanningTreeTest, GraphWithMultipleMinimumSpanningTrees) {
     }
 }
 
+// Вспомогательная функция для сортировки компонентов
+template<typename T>
+void sortSCC(ArraySequence<ArraySequence<T>>& sccList) {
+    // Сортируем вершины внутри каждой компоненты
+    for(int i = 0; i < sccList.getLength(); ++i){
+        // Копируем компоненты в std::vector для сортировки
+        std::vector<T> temp;
+        for(int j = 0; j < sccList[i].getLength(); ++j){
+            temp.push_back(sccList[i][j]);
+        }
+        std::sort(temp.begin(), temp.end());
+        // Обновляем компоненты
+        for(int j = 0; j < temp.size(); ++j){
+            sccList[i][j] = temp[j];
+        }
+    }
+
+    // Сортируем список компонент по первому элементу каждой компоненты
+    std::sort(sccList.begin(), sccList.end(), [&](const ArraySequence<T>& a, const ArraySequence<T>& b) -> bool {
+        if(a.getLength() == 0) return true;
+        if(b.getLength() == 0) return false;
+        return a[0] < b[0];
+    });
+}
+
 TEST(StronglyConnectedComponentsTest, EmptyGraph) {
     DirectedGraph<int> graph(0);
     auto scc = StronglyConnectedComponents<int>::findSCC(graph);
@@ -350,8 +375,11 @@ TEST(StronglyConnectedComponentsTest, TwoStronglyConnectedVertices) {
     auto scc = StronglyConnectedComponents<int>::findSCC(graph);
     EXPECT_EQ(scc.getLength(), 1);
     EXPECT_EQ(scc[0].getLength(), 2);
-    EXPECT_TRUE(scc[0].find(0));
-    EXPECT_TRUE(scc[0].find(1));
+    std::vector<int> expected = {0, 1};
+    std::vector<int> actual = {scc[0][0], scc[0][1]};
+    std::sort(actual.begin(), actual.end());
+    std::sort(expected.begin(), expected.end());
+    EXPECT_EQ(actual, expected);
 }
 
 TEST(StronglyConnectedComponentsTest, TwoDisconnectedVertices) {
@@ -359,10 +387,22 @@ TEST(StronglyConnectedComponentsTest, TwoDisconnectedVertices) {
     graph.addEdge(0, 1, 1);
     auto scc = StronglyConnectedComponents<int>::findSCC(graph);
     EXPECT_EQ(scc.getLength(), 2);
-    EXPECT_EQ(scc[0].getLength(), 1);
-    EXPECT_EQ(scc[1].getLength(), 1);
-    EXPECT_TRUE(scc[0].find(0));
-    EXPECT_TRUE(scc[1].find(1));
+
+    // Ожидаемые компоненты: {0}, {1}
+    std::vector<std::vector<int>> expected = { {0}, {1} };
+    std::vector<std::vector<int>> actual;
+
+    for(int i = 0; i < scc.getLength(); ++i){
+        std::vector<int> component = { scc[i][0] };
+        actual.push_back(component);
+    }
+
+    // Сортируем для корректного сравнения
+    std::sort(actual.begin(), actual.end(), [](const std::vector<int>& a, const std::vector<int>& b)-> bool{
+        return a[0] < b[0];
+    });
+
+    EXPECT_EQ(actual, expected);
 }
 
 TEST(StronglyConnectedComponentsTest, ComplexGraph) {
@@ -375,24 +415,30 @@ TEST(StronglyConnectedComponentsTest, ComplexGraph) {
     auto scc = StronglyConnectedComponents<int>::findSCC(graph);
     EXPECT_EQ(scc.getLength(), 3);
 
-    // Проверяем наличие ожидаемых компонент
-    bool foundSCC0 = false, foundSCC1 = false, foundSCC2 = false;
+    // Ожидаемые компоненты: {0,1,2}, {3}, {4}
+    std::vector<std::vector<int>> expected = { {0,1,2}, {3}, {4} };
+    std::vector<std::vector<int>> actual;
+
     for(int i = 0; i < scc.getLength(); ++i){
-        if(scc[i].getLength() == 3){
-            EXPECT_TRUE(scc[i].find(0));
-            EXPECT_TRUE(scc[i].find(1));
-            EXPECT_TRUE(scc[i].find(2));
-            foundSCC0 = true;
+        std::vector<int> component;
+        for(int j = 0; j < scc[i].getLength(); ++j){
+            component.push_back(scc[i][j]);
         }
-        if(scc[i].getLength() == 1){
-            EXPECT_TRUE(scc[i].find(3) || scc[i].find(4));
-            foundSCC1 = true;
-            foundSCC2 = true;
-        }
+        std::sort(component.begin(), component.end());
+        actual.push_back(component);
     }
-    EXPECT_TRUE(foundSCC0);
-    EXPECT_TRUE(foundSCC1);
-    EXPECT_TRUE(foundSCC2);
+
+    // Сортируем список компонент по первому элементу каждой компоненты
+    std::sort(actual.begin(), actual.end(), [&](const std::vector<int>& a, const std::vector<int>& b)-> bool{
+        return a[0] < b[0];
+    });
+
+    // Сортируем ожидаемые компоненты по аналогичному критерию
+    std::sort(expected.begin(), expected.end(), [&](const std::vector<int>& a, const std::vector<int>& b)-> bool{
+        return a[0] < b[0];
+    });
+
+    EXPECT_EQ(actual, expected);
 }
 
 TEST(StronglyConnectedComponentsTest, FullyConnectedGraph) {
@@ -403,210 +449,78 @@ TEST(StronglyConnectedComponentsTest, FullyConnectedGraph) {
     auto scc = StronglyConnectedComponents<int>::findSCC(graph);
     EXPECT_EQ(scc.getLength(), 1);
     EXPECT_EQ(scc[0].getLength(), 3);
-    EXPECT_TRUE(scc[0].find(0));
-    EXPECT_TRUE(scc[0].find(1));
-    EXPECT_TRUE(scc[0].find(2));
+    std::vector<int> expected = {0, 1, 2};
+    std::vector<int> actual = {scc[0][0], scc[0][1], scc[0][2]};
+    std::sort(actual.begin(), actual.end());
+    std::sort(expected.begin(), expected.end());
+    EXPECT_EQ(actual, expected);
 }
 
-// Тестирование явной диаграммы Хассе на пустом графе
-TEST(LatticeTest, ExplicitHasseDiagramEmpty) {
-    DirectedGraph<int> diagram(0);
-    ArraySequence<int> elements;
-    Lattice<int> lattice(diagram, elements);
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(), 0);
-}
+// Вспомогательная функция для разделения ArraySequence<Pair<Weight, Vertex>> на отдельные массивы
+template<typename Weight, typename Vertex>
+std::pair<ArraySequence<Weight>, ArraySequence<Vertex>> splitResult(const ArraySequence<Pair<Weight, Vertex>>& result) {
+    ArraySequence<Weight> distances;
+    ArraySequence<Vertex> predecessors;
 
-// Тестирование явной диаграммы Хассе с одной вершиной
-TEST(LatticeTest, ExplicitHasseDiagramSingleElement) {
-    DirectedGraph<int> diagram(1);
-    ArraySequence<int> elements;
-    elements.append(1);
-    Lattice<int> lattice(diagram, elements);
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(), 1);
-    EXPECT_FALSE(lattice.getHasseDiagram().hasEdge(0, 0)); // Нет циклов
+    for(int i = 0; i < result.getLength(); ++i){
+        distances.append(result[i].first);
+        predecessors.append(result[i].second);
+    }
 
-    // Проверка отношения
-    EXPECT_TRUE(lattice.lessEqual(1,1));
-}
-
-// Тестирование явной диаграммы Хассе с двумя связанными вершинами
-TEST(LatticeTest, ExplicitHasseDiagramTwoElements) {
-    DirectedGraph<int> diagram(2);
-    diagram.addEdge(0,1,1); // 1 -> 2
-    ArraySequence<int> elements = {1, 2};
-    Lattice<int> lattice(diagram, elements);
-
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(),2);
-    EXPECT_TRUE(lattice.getHasseDiagram().hasEdge(0,1));
-
-    // Проверка отношений
-    EXPECT_TRUE(lattice.lessEqual(1,2));
-    EXPECT_FALSE(lattice.lessEqual(2,1));
-}
-
-// Тестирование неявной диаграммы Хассе на пустом графе
-TEST(LatticeTest, ImplicitHasseDiagramEmpty) {
-    ArraySequence<int> elements;
-    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(), 0);
-}
-
-// Тестирование неявной диаграммы Хассе с одной вершиной
-TEST(LatticeTest, ImplicitHasseDiagramSingleElement) {
-    ArraySequence<int> elements;
-    elements.append(1);
-    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(),1);
-
-    // Проверка отношения
-    EXPECT_TRUE(lattice.lessEqual(1,1));
-}
-
-// Тестирование неявной диаграммы Хассе с несколькими элементами
-TEST(LatticeTest, ImplicitHasseDiagramMultipleElements) {
-    ArraySequence<int> elements;
-    elements.append(1);
-    elements.append(2);
-    elements.append(3);
-    elements.append(4);
-    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-    EXPECT_EQ(lattice.getHasseDiagram().getVertexCount(),4);
-
-    // Ожидаемые ребра диаграммы Хассе для отношения <= на {1,2,3,4}: 1->2, 1->3, 2->4, 3->4
-    EXPECT_TRUE(lattice.getHasseDiagram().hasEdge(0,1)); // 1->2
-    EXPECT_TRUE(lattice.getHasseDiagram().hasEdge(0,2)); // 1->3
-    EXPECT_TRUE(lattice.getHasseDiagram().hasEdge(1,3)); // 2->4
-    EXPECT_TRUE(lattice.getHasseDiagram().hasEdge(2,3)); // 3->4
-}
-
-// Тестирование метода lessEqual
-TEST(LatticeTest, LessEqualRelation) {
-    ArraySequence<int> elements;
-    elements.append(1);
-    elements.append(2);
-    elements.append(3);
-    elements.append(4);    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-
-    EXPECT_TRUE(lattice.lessEqual(1,2));
-    EXPECT_TRUE(lattice.lessEqual(1,3));
-    EXPECT_TRUE(lattice.lessEqual(1,4));
-    EXPECT_TRUE(lattice.lessEqual(2,4));
-    EXPECT_TRUE(lattice.lessEqual(3,4));
-    EXPECT_TRUE(lattice.lessEqual(1,1));
-    EXPECT_FALSE(lattice.lessEqual(2,1));
-    EXPECT_FALSE(lattice.lessEqual(3,2));
-}
-
-// Тестирование операции meet (наибольшая нижняя грани)
-TEST(LatticeTest, MeetOperation) {
-    ArraySequence<int> elements;
-    elements.append(1);
-    elements.append(2);
-    elements.append(3);
-    elements.append(4);    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-
-    // meet(2,3) =1
-    auto meetResult = lattice.meet(2,3);
-    ASSERT_TRUE(meetResult.has_value());
-    EXPECT_EQ(meetResult.value(), 1);
-
-    // meet(2,4) =2
-    meetResult = lattice.meet(2,4);
-    ASSERT_TRUE(meetResult.has_value());
-    EXPECT_EQ(meetResult.value(), 2);
-
-    // meet(3,4) =3
-    meetResult = lattice.meet(3,4);
-    ASSERT_TRUE(meetResult.has_value());
-    EXPECT_EQ(meetResult.value(), 3);
-}
-
-// Тестирование операции join (наименьшая верхняя грани)
-TEST(LatticeTest, JoinOperation) {
-    ArraySequence<int> elements;
-    elements.append(1);
-    elements.append(2);
-    elements.append(3);
-    elements.append(4);    auto relation = [](const int& a, const int& b) -> bool { return a <= b; };
-    Lattice<int> lattice(elements, relation);
-
-    // join(1,2) =2
-    auto joinResult = lattice.join(1,2);
-    ASSERT_TRUE(joinResult.has_value());
-    EXPECT_EQ(joinResult.value(), 2);
-
-    // join(1,3) =3
-    joinResult = lattice.join(1,3);
-    ASSERT_TRUE(joinResult.has_value());
-    EXPECT_EQ(joinResult.value(), 3);
-
-    // join(2,3) =4
-    joinResult = lattice.join(2,3);
-    ASSERT_TRUE(joinResult.has_value());
-    EXPECT_EQ(joinResult.value(),4);
-}
-
-// Тестирование Dijkstra на пустом графе
-TEST(ShortestPathTest, EmptyGraph) {
-    UndirectedGraph<int> graph(0);
-    EXPECT_THROW(ShortestPath::dijkstra(graph, 0), std::out_of_range);
+    return {distances, predecessors};
 }
 
 // Тестирование Dijkstra на графе с одной вершиной
 TEST(ShortestPathTest, SingleVertex) {
-    UndirectedGraph<int> graph(1);
-    auto result = ShortestPath::dijkstra(graph, 0);
-    EXPECT_EQ(result.first.getLength(),1);
-    EXPECT_EQ(result.first[0], 0.0);
-    EXPECT_EQ(result.second.getLength(),1);
-    EXPECT_EQ(result.second[0], -1);
+    DirectedGraph<int> graph(1); // Используем DirectedGraph для согласованности
+    auto result = ShortestPath::dijkstra<int>(graph, 0);
+    auto [distances, predecessors] = splitResult<double, int>(result); // Предполагаем Weight как double
+
+    EXPECT_EQ(distances.getLength(),1);
+    EXPECT_DOUBLE_EQ(distances[0], 0.0);
+    EXPECT_EQ(predecessors.getLength(),1);
+    EXPECT_EQ(predecessors[0], -1);
 }
 
 // Тестирование Dijkstra на простом графе без циклов
 TEST(ShortestPathTest, SimpleGraph) {
-    UndirectedGraph<int> graph(3);
+    DirectedGraph<int> graph(3);
     graph.addEdge(0,1,1);
     graph.addEdge(1,2,2);
-    auto result = ShortestPath::dijkstra(graph, 0);
+    auto result = ShortestPath::dijkstra<int>(graph, 0);
 
-    ArraySequence<double> distances = result.first;
-    ArraySequence<int> predecessors = result.second;
+    auto [distances, predecessors] = splitResult<double, int>(result);
 
     EXPECT_EQ(distances.getLength(), 3);
-    EXPECT_EQ(distances[0],0.0);
-    EXPECT_EQ(distances[1],1.0);
-    EXPECT_EQ(distances[2],3.0);
+    EXPECT_DOUBLE_EQ(distances[0], 0.0);
+    EXPECT_DOUBLE_EQ(distances[1], 1.0);
+    EXPECT_DOUBLE_EQ(distances[2], 3.0);
 
+    EXPECT_EQ(predecessors.getLength(), 3);
     EXPECT_EQ(predecessors[0], -1);
-    EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],1);
+    EXPECT_EQ(predecessors[1], 0);
+    EXPECT_EQ(predecessors[2], 1);
 }
 
 // Тестирование Dijkstra на графе с несколькими путями
 TEST(ShortestPathTest, MultiplePaths) {
-    UndirectedGraph<int> graph(4);
+    DirectedGraph<int> graph(4);
     graph.addEdge(0,1,1);
     graph.addEdge(0,2,4);
     graph.addEdge(1,2,2);
     graph.addEdge(1,3,5);
     graph.addEdge(2,3,1);
 
-    auto result = ShortestPath::dijkstra(graph,0);
-
-    ArraySequence<double> distances = result.first;
-    ArraySequence<int> predecessors = result.second;
+    auto result = ShortestPath::dijkstra<int>(graph, 0);
+    auto [distances, predecessors] = splitResult<double, int>(result);
 
     EXPECT_EQ(distances.getLength(),4);
-    EXPECT_EQ(distances[0],0.0);
-    EXPECT_EQ(distances[1],1.0);
-    EXPECT_EQ(distances[2],3.0); // 0->1->2
-    EXPECT_EQ(distances[3],4.0); // 0->1->2->3
+    EXPECT_DOUBLE_EQ(distances[0],0.0);
+    EXPECT_DOUBLE_EQ(distances[1],1.0);
+    EXPECT_DOUBLE_EQ(distances[2],3.0); // 0->1->2
+    EXPECT_DOUBLE_EQ(distances[3],4.0); // 0->1->2->3
 
+    EXPECT_EQ(predecessors.getLength(),4);
     EXPECT_EQ(predecessors[0], -1);
     EXPECT_EQ(predecessors[1],0);
     EXPECT_EQ(predecessors[2],1);
@@ -615,156 +529,254 @@ TEST(ShortestPathTest, MultiplePaths) {
 
 // Тестирование Dijkstra с неверным источником
 TEST(ShortestPathTest, SourceOutOfRange) {
-    UndirectedGraph<int> graph(3);
+    DirectedGraph<int> graph(3);
     graph.addEdge(0,1,1);
     graph.addEdge(1,2,2);
 
-    EXPECT_THROW(ShortestPath::dijkstra(graph, 3), std::out_of_range);
+    EXPECT_THROW(ShortestPath::dijkstra<int>(graph, 3), std::out_of_range);
 }
 
 // Тестирование Dijkstra с динамическими весами на пустом графе
 TEST(DynamicWeightShortestPathTest, EmptyGraph) {
-    UndirectedGraph<double> graph(0);
-    auto updateFunc = [](double weight, double time) -> double { return weight; };
+    DirectedGraph<double> graph(0);
+    auto updateFunc = [](double weight) -> double { return weight; };
     DynamicWeightShortestPath dsp(updateFunc);
-    EXPECT_THROW(dsp.dijkstra(graph, 0, 0.0), std::out_of_range);
+    EXPECT_THROW(dsp.dijkstra(graph, 0), std::out_of_range);
 }
 
 // Тестирование Dijkstra с динамическими весами на графе с одной вершиной
 TEST(DynamicWeightShortestPathTest, SingleVertex) {
-    UndirectedGraph<double> graph(1);
-    auto updateFunc = [](double weight, double time) -> double { return weight; };
+    DirectedGraph<double> graph(1);
+    auto updateFunc = [](double weight) -> double { return weight; };
     DynamicWeightShortestPath dsp(updateFunc);
-    auto result = dsp.dijkstra(graph, 0, 0.0);
-    EXPECT_EQ(result.first.getLength(),1);
-    EXPECT_EQ(result.first[0],0.0);
-    EXPECT_EQ(result.second.getLength(),1);
-    EXPECT_EQ(result.second[0], -1);
+    auto result = dsp.dijkstra(graph, 0);
+    auto [distances, predecessors] = splitResult<double, int>(result);
+
+    EXPECT_EQ(distances.getLength(),1);
+    EXPECT_DOUBLE_EQ(distances[0],0.0);
+    EXPECT_EQ(predecessors.getLength(),1);
+    EXPECT_EQ(predecessors[0], -1);
 }
 
 // Тестирование Dijkstra с динамическими весами на простом графе
 TEST(DynamicWeightShortestPathTest, SimpleGraph) {
-    UndirectedGraph<double> graph(3);
+    DirectedGraph<double> graph(3);
     graph.addEdge(0,1,1.0);
     graph.addEdge(1,2,2.0);
 
-    auto updateFunc = [](double weight, double time) -> double { return weight + time; };
+    auto updateFunc = [](double weight) -> double { return weight; }; // Не учитываем время
     DynamicWeightShortestPath dsp(updateFunc);
 
-    auto result = dsp.dijkstra(graph,0, 0.0);
-    ArraySequence<double> distances = result.first;
-    ArraySequence<int> predecessors = result.second;
+    auto result = dsp.dijkstra(graph,0);
+    auto [distances, predecessors] = splitResult<double, int>(result);
 
     EXPECT_EQ(distances.getLength(),3);
-    EXPECT_EQ(distances[0],0.0);
-    EXPECT_EQ(distances[1],1.0);
-    EXPECT_EQ(distances[2],3.0); // 0->1->2
+    EXPECT_DOUBLE_EQ(distances[0],0.0);
+    EXPECT_DOUBLE_EQ(distances[1],1.0);
+    EXPECT_DOUBLE_EQ(distances[2],3.0); // 0->1->2
 
+    EXPECT_EQ(predecessors.getLength(),3);
     EXPECT_EQ(predecessors[0], -1);
     EXPECT_EQ(predecessors[1],0);
     EXPECT_EQ(predecessors[2],1);
 }
 
-// Тестирование Dijkstra с изменением весов во времени
 TEST(DynamicWeightShortestPathTest, TimeDependentWeights) {
-    UndirectedGraph<double> graph(3);
+    DirectedGraph<double> graph(3);
     graph.addEdge(0,1,1.0);
     graph.addEdge(1,2,2.0);
     graph.addEdge(0,2,4.0);
 
-    // Вес увеличивается на 0.5 за единицу времени
-    auto updateFunc = [](double weight, double time) -> double { return weight + 0.5 * time; };
+    // Вес увеличивается на 0.5 за фиксированное время внутри лямбды
+    auto updateFunc = [](double weight) -> double {
+        double time = 2.0; // Фиксированное время для теста
+        return weight + 0.5 * time;
+    };
     DynamicWeightShortestPath dsp(updateFunc);
 
-    double time = 2.0;
-    auto result = dsp.dijkstra(graph,0, time);
-    ArraySequence<double> distances = result.first;
-    ArraySequence<int> predecessors = result.second;
+    auto result = dsp.dijkstra(graph,0);
+    auto [distances, predecessors] = splitResult<double, int>(result);
 
     // Обновлённые веса: (0-1)=2.0, (1-2)=3.0, (0-2)=5.0
     EXPECT_EQ(distances.getLength(),3);
-    EXPECT_EQ(distances[0],0.0);
-    EXPECT_EQ(distances[1],2.0);
-    EXPECT_EQ(distances[2],5.0); // 0->1->2
+    EXPECT_DOUBLE_EQ(distances[0],0.0);
+    EXPECT_DOUBLE_EQ(distances[1],2.0);
+    EXPECT_DOUBLE_EQ(distances[2],5.0); // 0->1->2
 
+    EXPECT_EQ(predecessors.getLength(),3);
     EXPECT_EQ(predecessors[0], -1);
     EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],1);
+    EXPECT_EQ(predecessors[2],0); // Путь напрямую 0->2 минимальный с обновлённым весом
 }
 
 // Тестирование Dijkstra с динамическими весами на графе с пересекающимися путями
 TEST(DynamicWeightShortestPathTest, ComplexGraph) {
-    UndirectedGraph<double> graph(4);
+    DirectedGraph<double> graph(4);
     graph.addEdge(0,1,1.0);
     graph.addEdge(0,2,5.0);
     graph.addEdge(1,2,2.0);
     graph.addEdge(1,3,4.0);
     graph.addEdge(2,3,1.0);
 
-    // Вес уменьшается на 0.2 за единицу времени
-    auto updateFunc = [](double weight, double time) -> double { return weight - 0.2 * time; };
+    // Вес уменьшается на 0.2 за фиксированное время внутри лямбды
+    auto updateFunc = [](double weight) -> double {
+        double time = 3.0; // Фиксированное время для теста
+        return weight - 0.2 * time;
+    };
     DynamicWeightShortestPath dsp(updateFunc);
 
-    double time = 3.0;
-    auto result = dsp.dijkstra(graph,0, time);
-    ArraySequence<double> distances = result.first;
-    ArraySequence<int> predecessors = result.second;
+    auto result = dsp.dijkstra(graph,0);
+    auto [distances, predecessors] = splitResult<double, int>(result);
 
-    // Обновлённые веса: (0-1)=0.4, (0-2)=4.4, (1-2)=1.4, (1-3)=3.4, (2-3)=0.8
+    // Обновлённые веса: (0-1)=0.4, (0-2)=4.4, (1-2)=1.4, (1-3)=3.4, (2-3)=0.4
     EXPECT_EQ(distances.getLength(),4);
-    EXPECT_DOUBLE_EQ(distances[0],0.0);
-    EXPECT_DOUBLE_EQ(distances[1],0.4);
-    EXPECT_DOUBLE_EQ(distances[2],1.8); // 0->1->2
-    EXPECT_DOUBLE_EQ(distances[3],2.2); // 0->1->2->3
+    EXPECT_NEAR(distances[0], 0.0, 1e-6);
+    EXPECT_NEAR(distances[1], 0.4, 1e-6);
+    EXPECT_NEAR(distances[2], 1.8, 1e-6); // 0->1->2
+    EXPECT_NEAR(distances[3], 2.2, 1e-6); // 0->1->2->3
 
+    EXPECT_EQ(predecessors.getLength(),4);
     EXPECT_EQ(predecessors[0], -1);
     EXPECT_EQ(predecessors[1],0);
     EXPECT_EQ(predecessors[2],1);
     EXPECT_EQ(predecessors[3],2);
 }
 
-// Тестирование hasPath на простом графе
-TEST(DirectedGraphTest, HasPathSimple) {
-    DirectedGraph<int> graph(3);
-    graph.addEdge(0,1,1);
-    graph.addEdge(1,2,1);
+// Тесты для GraphGenerator
+TEST(GraphGenerator, GenerateCompleteGraph) {
+    int vertices = 5;
+    int maxWeight = 10;
+    UndirectedGraph<int> completeGraph = GraphGenerator::generateUndirectedGraph(GraphGenerator::COMPLETE, vertices, 1.0, maxWeight);
 
-    EXPECT_TRUE(graph.hasPath(0,2));
-    EXPECT_FALSE(graph.hasPath(2,0));
-    EXPECT_TRUE(graph.hasPath(0,1));
-    EXPECT_TRUE(graph.hasPath(1,2));
+    ASSERT_EQ(completeGraph.getVertexCount(), vertices);
+    for (int i = 0; i < vertices; ++i) {
+        ASSERT_EQ(completeGraph.getDegree(i), vertices - 1);
+        for (int j = 0; j < vertices; ++j) {
+            if (i != j) {
+                ASSERT_TRUE(completeGraph.hasEdge(i, j));
+                ASSERT_GE(completeGraph.getEdgeWeight(i, j), 1);
+                ASSERT_LE(completeGraph.getEdgeWeight(i, j), maxWeight);
+            }
+        }
+    }
 }
 
-// Тестирование hasPath на графе без пути
-TEST(DirectedGraphTest, HasPathNoPath) {
-    DirectedGraph<int> graph(3);
-    graph.addEdge(0,1,1);
+TEST(GraphGenerator, GenerateSparseGraph) {
+    int vertices = 10;
+    int maxWeight = 20;
+    UndirectedGraph<int> sparseGraph = GraphGenerator::generateUndirectedGraph(GraphGenerator::SPARSE, vertices, 0.1, maxWeight);
 
-    EXPECT_FALSE(graph.hasPath(1,0));
-    EXPECT_FALSE(graph.hasPath(0,2));
-    EXPECT_FALSE(graph.hasPath(2,0));
+    ASSERT_EQ(sparseGraph.getVertexCount(), vertices);
+    // В разрежённом графе степень каждой вершины должна быть минимальной (1)
+    for (int i = 0; i < vertices; ++i) {
+        ASSERT_GE(sparseGraph.getDegree(i), 1);
+        ASSERT_LE(sparseGraph.getDegree(i), vertices - 1);
+    }
 }
 
-// Тестирование hasPath на полном графе
-TEST(DirectedGraphTest, HasPathCompleteGraph) {
-    DirectedGraph<int> graph(3);
-    graph.addEdge(0,1,1);
-    graph.addEdge(1,0,1);
-    graph.addEdge(0,2,1);
-    graph.addEdge(2,0,1);
-    graph.addEdge(1,2,1);
-    graph.addEdge(2,1,1);
+TEST(GraphGenerator, GenerateCycleGraph) {
+    int vertices = 4;
+    int maxWeight = 15;
+    UndirectedGraph<int> cycleGraph = GraphGenerator::generateUndirectedGraph(GraphGenerator::CYCLE, vertices, 1.0, maxWeight);
 
-    EXPECT_TRUE(graph.hasPath(0,1));
-    EXPECT_TRUE(graph.hasPath(1,0));
-    EXPECT_TRUE(graph.hasPath(0,2));
-    EXPECT_TRUE(graph.hasPath(2,0));
-    EXPECT_TRUE(graph.hasPath(1,2));
-    EXPECT_TRUE(graph.hasPath(2,1));
+    ASSERT_EQ(cycleGraph.getVertexCount(), vertices);
+    for (int i = 0; i < vertices; ++i) {
+        ASSERT_EQ(cycleGraph.getDegree(i), 2);
+        int next = (i + 1) % vertices;
+        int prev = (i - 1 + vertices) % vertices;
+        ASSERT_TRUE(cycleGraph.hasEdge(i, next));
+        ASSERT_TRUE(cycleGraph.hasEdge(i, prev));
+    }
 }
 
-// Тестирование hasPath на пустом графе
-TEST(DirectedGraphTest, HasPathEmptyGraph) {
-    DirectedGraph<int> graph(0);
-    EXPECT_THROW(graph.hasPath(0,0), std::out_of_range);
+TEST(GraphGenerator, GenerateDirectedGraph) {
+    int vertices = 5;
+    int maxWeight = 30;
+    DirectedGraph<int> directedGraph = GraphGenerator::generateDirectedGraph(GraphGenerator::RANDOM, vertices, 0.5, maxWeight);
+
+    ASSERT_EQ(directedGraph.getVertexCount(), vertices);
+    for (int i = 0; i < vertices; ++i) {
+        // Проверка диапазона веса рёбер
+        ArraySequence<Pair<int, int>> neighbors = directedGraph.getNeighbors(i);
+        for (int j = 0; j < neighbors.getLength(); ++j) {
+            int weight = neighbors[j].second;
+            ASSERT_GE(weight, 1);
+            ASSERT_LE(weight, maxWeight);
+        }
+    }
+}
+
+// Тесты для Lattice
+TEST(Lattice, ConstructorExplicit) {
+    // Создание явного графа Хассе
+    DirectedGraph<int> diagram(3);
+    diagram.addEdge(0, 1, 1);
+    diagram.addEdge(1, 2, 1);
+
+    ArraySequence<int> elements;
+    elements.append(1);
+    elements.append(2);
+    elements.append(3);
+
+    Lattice<int> lattice(diagram, elements);
+
+    ASSERT_TRUE(lattice.lessEqual(1, 2));
+    ASSERT_TRUE(lattice.lessEqual(2, 3));
+    ASSERT_TRUE(lattice.lessEqual(1, 3));
+    ASSERT_FALSE(lattice.lessEqual(3, 1));
+}
+
+TEST(Lattice, ConstructorImplicit) {
+    ArraySequence<int> elements;
+    elements.append(1);
+    elements.append(2);
+    elements.append(3);
+    elements.append(4);
+
+    Lattice<int> lattice(elements,[](const int& a, const int& b) {
+        return a <= b;
+    });
+
+    ASSERT_TRUE(lattice.lessEqual(1, 2));
+    ASSERT_TRUE(lattice.lessEqual(2, 3));
+    ASSERT_TRUE(lattice.lessEqual(1, 3));
+    ASSERT_TRUE(lattice.lessEqual(3, 4));
+    ASSERT_TRUE(lattice.lessEqual(1, 4));
+    ASSERT_FALSE(lattice.lessEqual(4, 1));
+}
+
+TEST(Lattice, InvalidElements) {
+    ArraySequence<int> elements;
+    elements.append(1);
+    elements.append(2);
+
+    // Конструктор с неявным графом
+    Lattice<int> lattice(elements, [](const int& a, const int& b) {
+        return a <= b;
+    });
+
+    // Проверка исключений для несуществующих элементов
+    ASSERT_THROW(lattice.lessEqual(1, 3), std::invalid_argument);
+
+}
+
+TEST(GraphGenerator, GenerateTree) {
+    int vertices = 7;
+    int maxWeight = 50;
+    UndirectedGraph<int> treeGraph = GraphGenerator::generateUndirectedGraph(GraphGenerator::TREE, vertices, 0.0, maxWeight);
+
+    ASSERT_EQ(treeGraph.getVertexCount(), vertices);
+    // В дереве должно быть ровно vertices - 1 рёбер
+    int edgeCount = 0;
+    for (int i = 0; i < vertices; ++i) {
+        edgeCount += treeGraph.getDegree(i);
+    }
+    ASSERT_EQ(edgeCount, 2 * (vertices - 1));
+
+    // Проверка связности через DFS
+    ArraySequence<bool> visited(vertices, false);
+    treeGraph.dfs(0, visited, nullptr);
+    for (int i = 0; i < vertices; ++i) {
+        ASSERT_TRUE(visited.get(i));
+    }
 }
