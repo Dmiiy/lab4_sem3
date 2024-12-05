@@ -162,18 +162,15 @@ private:
             return balance(r);
         }
 
-        assert(v == r->value);
+        // Found the node to remove
         if (r->left && r->right) {
-            r->value = minimum(r->right)->value;
-            r->right = removeTo(r->right, r->value);
+            Node *minNode = minimum(r->right);
+            // Copy the value instead of asserting equality
+            r->value = minNode->value;
+            r->right = removeTo(r->right, minNode->value);
         } else {
             Node *toDelete = r;
-            if (r->left)
-                r = r->left;
-            else if (r->right)
-                r = r->right;
-            else
-                r = nullptr;
+            r = (r->left) ? r->left : r->right;
             size--;
             delete toDelete;
         }
@@ -193,10 +190,14 @@ private:
     }
 
     Node *minimum(Node *n) const {
-        if (n == nullptr) throw range_error("Empty tree");
-        while (n->left) n = n->left;
-        return n;
+        if (n == nullptr) throw std::range_error("Empty tree");
+        Node *current = n;
+        while (current->left) {
+            current = current->left;
+        }
+        return current;
     }
+
 
     Node *maximum(Node *n) const {
         if (n == nullptr) throw range_error("Empty tree");

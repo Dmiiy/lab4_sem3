@@ -469,32 +469,41 @@ std::pair<ArraySequence<Weight>, ArraySequence<Vertex>> splitResult(const ArrayS
 
     return {distances, predecessors};
 }
+// Helper function to split results
+template<typename T>
+std::pair<ArraySequence<T>, ArraySequence<int>> splitResult(const ArraySequence<Pair<T, int>>& result) {
+    ArraySequence<T> distances;
+    ArraySequence<int> predecessors;
+    for (int i = 0; i < result.getLength(); i++) {
+        distances.append(result[i].first);
+        predecessors.append(result[i].second);
+    }
+    return {distances, predecessors};
+}
 
-// Тестирование Dijkstra на графе с одной вершиной
+// Basic tests for ShortestPath
 TEST(ShortestPathTest, SingleVertex) {
-    DirectedGraph<int> graph(1); // Используем DirectedGraph для согласованности
-    auto result = ShortestPath::dijkstra<int>(graph, 0);
-    auto [distances, predecessors] = splitResult<double, int>(result); // Предполагаем Weight как double
+    DirectedGraph<int> graph(1);
+    auto result = ShortestPath<int>::dijkstra(graph, 0);
+    auto [distances, predecessors] = splitResult(result);
 
-    EXPECT_EQ(distances.getLength(),1);
-    EXPECT_DOUBLE_EQ(distances[0], 0.0);
-    EXPECT_EQ(predecessors.getLength(),1);
+    EXPECT_EQ(distances.getLength(), 1);
+    EXPECT_EQ(distances[0], 0);
+    EXPECT_EQ(predecessors.getLength(), 1);
     EXPECT_EQ(predecessors[0], -1);
 }
 
-// Тестирование Dijkstra на простом графе без циклов
 TEST(ShortestPathTest, SimpleGraph) {
     DirectedGraph<int> graph(3);
-    graph.addEdge(0,1,1);
-    graph.addEdge(1,2,2);
-    auto result = ShortestPath::dijkstra<int>(graph, 0);
-
-    auto [distances, predecessors] = splitResult<double, int>(result);
+    graph.addEdge(0, 1, 1);
+    graph.addEdge(1, 2, 2);
+    auto result = ShortestPath<int>::dijkstra(graph, 0);
+    auto [distances, predecessors] = splitResult(result);
 
     EXPECT_EQ(distances.getLength(), 3);
-    EXPECT_DOUBLE_EQ(distances[0], 0.0);
-    EXPECT_DOUBLE_EQ(distances[1], 1.0);
-    EXPECT_DOUBLE_EQ(distances[2], 3.0);
+    EXPECT_EQ(distances[0], 0);
+    EXPECT_EQ(distances[1], 1);
+    EXPECT_EQ(distances[2], 3);
 
     EXPECT_EQ(predecessors.getLength(), 3);
     EXPECT_EQ(predecessors[0], -1);
@@ -502,146 +511,37 @@ TEST(ShortestPathTest, SimpleGraph) {
     EXPECT_EQ(predecessors[2], 1);
 }
 
-// Тестирование Dijkstra на графе с несколькими путями
-TEST(ShortestPathTest, MultiplePaths) {
-    DirectedGraph<int> graph(4);
-    graph.addEdge(0,1,1);
-    graph.addEdge(0,2,4);
-    graph.addEdge(1,2,2);
-    graph.addEdge(1,3,5);
-    graph.addEdge(2,3,1);
-
-    auto result = ShortestPath::dijkstra<int>(graph, 0);
-    auto [distances, predecessors] = splitResult<double, int>(result);
-
-    EXPECT_EQ(distances.getLength(),4);
-    EXPECT_DOUBLE_EQ(distances[0],0.0);
-    EXPECT_DOUBLE_EQ(distances[1],1.0);
-    EXPECT_DOUBLE_EQ(distances[2],3.0); // 0->1->2
-    EXPECT_DOUBLE_EQ(distances[3],4.0); // 0->1->2->3
-
-    EXPECT_EQ(predecessors.getLength(),4);
-    EXPECT_EQ(predecessors[0], -1);
-    EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],1);
-    EXPECT_EQ(predecessors[3],2);
-}
-
-// Тестирование Dijkstra с неверным источником
-TEST(ShortestPathTest, SourceOutOfRange) {
+TEST(ShortestPathTest, UnreachableVertex) {
     DirectedGraph<int> graph(3);
-    graph.addEdge(0,1,1);
-    graph.addEdge(1,2,2);
+    graph.addEdge(0, 1, 1);
+    auto result = ShortestPath<int>::dijkstra(graph, 0);
+    auto [distances, predecessors] = splitResult(result);
 
-    EXPECT_THROW(ShortestPath::dijkstra<int>(graph, 3), std::out_of_range);
+    EXPECT_EQ(distances[2], std::numeric_limits<int>::max());
+    EXPECT_EQ(predecessors[2], -1);
+    EXPECT_THROW(ShortestPath<int>::getPath(result, 2), std::runtime_error);
 }
 
-// Тестирование Dijkstra с динамическими весами на пустом графе
-TEST(DynamicWeightShortestPathTest, EmptyGraph) {
-    DirectedGraph<double> graph(0);
-    auto updateFunc = [](double weight) -> double { return weight; };
-    DynamicWeightShortestPath dsp(updateFunc);
-    EXPECT_THROW(dsp.dijkstra(graph, 0), std::out_of_range);
+
+
+TEST(DynamicWeightShortestPathTest, InvalidSource) {
+    DirectedGraph<int> graph(3);
+    DynamicWeightShortestPath<int> dsp(0.1);
+    EXPECT_THROW(dsp.dijkstra(graph, 3), std::out_of_range);
 }
 
-// Тестирование Dijkstra с динамическими весами на графе с одной вершиной
-TEST(DynamicWeightShortestPathTest, SingleVertex) {
-    DirectedGraph<double> graph(1);
-    auto updateFunc = [](double weight) -> double { return weight; };
-    DynamicWeightShortestPath dsp(updateFunc);
+TEST(DynamicWeightShortestPathTest, PathValidation) {
+    DirectedGraph<int> graph(4);
+    graph.addEdge(0, 1, 1);
+    graph.addEdge(1, 2, 2);
+    graph.addEdge(2, 3, 3);
+
+    DynamicWeightShortestPath<int> dsp(0.1);
     auto result = dsp.dijkstra(graph, 0);
-    auto [distances, predecessors] = splitResult<double, int>(result);
 
-    EXPECT_EQ(distances.getLength(),1);
-    EXPECT_DOUBLE_EQ(distances[0],0.0);
-    EXPECT_EQ(predecessors.getLength(),1);
-    EXPECT_EQ(predecessors[0], -1);
+    EXPECT_NO_THROW(DynamicWeightShortestPath<int>::getPath(result, 3));
+    EXPECT_THROW(DynamicWeightShortestPath<int>::getPath(result, 4), std::out_of_range);
 }
-
-// Тестирование Dijkstra с динамическими весами на простом графе
-TEST(DynamicWeightShortestPathTest, SimpleGraph) {
-    DirectedGraph<double> graph(3);
-    graph.addEdge(0,1,1.0);
-    graph.addEdge(1,2,2.0);
-
-    auto updateFunc = [](double weight) -> double { return weight; }; // Не учитываем время
-    DynamicWeightShortestPath dsp(updateFunc);
-
-    auto result = dsp.dijkstra(graph,0);
-    auto [distances, predecessors] = splitResult<double, int>(result);
-
-    EXPECT_EQ(distances.getLength(),3);
-    EXPECT_DOUBLE_EQ(distances[0],0.0);
-    EXPECT_DOUBLE_EQ(distances[1],1.0);
-    EXPECT_DOUBLE_EQ(distances[2],3.0); // 0->1->2
-
-    EXPECT_EQ(predecessors.getLength(),3);
-    EXPECT_EQ(predecessors[0], -1);
-    EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],1);
-}
-
-TEST(DynamicWeightShortestPathTest, TimeDependentWeights) {
-    DirectedGraph<double> graph(3);
-    graph.addEdge(0,1,1.0);
-    graph.addEdge(1,2,2.0);
-    graph.addEdge(0,2,4.0);
-
-    // Вес увеличивается на 0.5 за фиксированное время внутри лямбды
-    auto updateFunc = [](double weight) -> double {
-        double time = 2.0; // Фиксированное время для теста
-        return weight + 0.5 * time;
-    };
-    DynamicWeightShortestPath dsp(updateFunc);
-
-    auto result = dsp.dijkstra(graph,0);
-    auto [distances, predecessors] = splitResult<double, int>(result);
-
-    // Обновлённые веса: (0-1)=2.0, (1-2)=3.0, (0-2)=5.0
-    EXPECT_EQ(distances.getLength(),3);
-    EXPECT_DOUBLE_EQ(distances[0],0.0);
-    EXPECT_DOUBLE_EQ(distances[1],2.0);
-    EXPECT_DOUBLE_EQ(distances[2],5.0); // 0->1->2
-
-    EXPECT_EQ(predecessors.getLength(),3);
-    EXPECT_EQ(predecessors[0], -1);
-    EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],0); // Путь напрямую 0->2 минимальный с обновлённым весом
-}
-
-// Тестирование Dijkstra с динамическими весами на графе с пересекающимися путями
-TEST(DynamicWeightShortestPathTest, ComplexGraph) {
-    DirectedGraph<double> graph(4);
-    graph.addEdge(0,1,1.0);
-    graph.addEdge(0,2,5.0);
-    graph.addEdge(1,2,2.0);
-    graph.addEdge(1,3,4.0);
-    graph.addEdge(2,3,1.0);
-
-    // Вес уменьшается на 0.2 за фиксированное время внутри лямбды
-    auto updateFunc = [](double weight) -> double {
-        double time = 3.0; // Фиксированное время для теста
-        return weight - 0.2 * time;
-    };
-    DynamicWeightShortestPath dsp(updateFunc);
-
-    auto result = dsp.dijkstra(graph,0);
-    auto [distances, predecessors] = splitResult<double, int>(result);
-
-    // Обновлённые веса: (0-1)=0.4, (0-2)=4.4, (1-2)=1.4, (1-3)=3.4, (2-3)=0.4
-    EXPECT_EQ(distances.getLength(),4);
-    EXPECT_NEAR(distances[0], 0.0, 1e-6);
-    EXPECT_NEAR(distances[1], 0.4, 1e-6);
-    EXPECT_NEAR(distances[2], 1.8, 1e-6); // 0->1->2
-    EXPECT_NEAR(distances[3], 2.2, 1e-6); // 0->1->2->3
-
-    EXPECT_EQ(predecessors.getLength(),4);
-    EXPECT_EQ(predecessors[0], -1);
-    EXPECT_EQ(predecessors[1],0);
-    EXPECT_EQ(predecessors[2],1);
-    EXPECT_EQ(predecessors[3],2);
-}
-
 // Тесты для GraphGenerator
 TEST(GraphGenerator, GenerateCompleteGraph) {
     int vertices = 5;

@@ -109,7 +109,7 @@ public:
         return hasPath(indexA, indexB, visited);
     }
 
-    DirectedGraph<int> getHasseDiagram() const {
+    DirectedGraph<T> getHasseDiagram() const {
         return hasseDiagram;
     }
 

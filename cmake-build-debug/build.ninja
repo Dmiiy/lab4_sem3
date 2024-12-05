@@ -57,6 +57,38 @@ build CMakeFiles/lab4_sem3.dir/main.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_D
   OBJECT_DIR = CMakeFiles\lab4_sem3.dir
   OBJECT_FILE_DIR = CMakeFiles\lab4_sem3.dir
 
+build CMakeFiles/lab4_sem3.dir/DirectedWindow.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_Debug C$:/Users/dimak/CLionProjects/lab4_sem3/DirectedWindow.cpp || cmake_object_order_depends_target_lab4_sem3
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\lab4_sem3.dir\DirectedWindow.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/dimak/CLionProjects/lab4_sem3/include -isystem C:/mingw64/include/QtCore -isystem C:/mingw64/include -isystem C:/mingw64/mkspecs/win32-g++ -isystem C:/mingw64/include/QtWidgets -isystem C:/mingw64/include/QtGui -isystem C:/mingw64/include/QtCharts -isystem C:/mingw64/include/QtOpenGL -isystem C:/mingw64/include/QtOpenGLWidgets
+  OBJECT_DIR = CMakeFiles\lab4_sem3.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab4_sem3.dir
+
+build CMakeFiles/lab4_sem3.dir/UndirectedWindow.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_Debug C$:/Users/dimak/CLionProjects/lab4_sem3/UndirectedWindow.cpp || cmake_object_order_depends_target_lab4_sem3
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\lab4_sem3.dir\UndirectedWindow.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/dimak/CLionProjects/lab4_sem3/include -isystem C:/mingw64/include/QtCore -isystem C:/mingw64/include -isystem C:/mingw64/mkspecs/win32-g++ -isystem C:/mingw64/include/QtWidgets -isystem C:/mingw64/include/QtGui -isystem C:/mingw64/include/QtCharts -isystem C:/mingw64/include/QtOpenGL -isystem C:/mingw64/include/QtOpenGLWidgets
+  OBJECT_DIR = CMakeFiles\lab4_sem3.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab4_sem3.dir
+
+build CMakeFiles/lab4_sem3.dir/MainWindow.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_Debug C$:/Users/dimak/CLionProjects/lab4_sem3/MainWindow.cpp || cmake_object_order_depends_target_lab4_sem3
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\lab4_sem3.dir\MainWindow.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/dimak/CLionProjects/lab4_sem3/include -isystem C:/mingw64/include/QtCore -isystem C:/mingw64/include -isystem C:/mingw64/mkspecs/win32-g++ -isystem C:/mingw64/include/QtWidgets -isystem C:/mingw64/include/QtGui -isystem C:/mingw64/include/QtCharts -isystem C:/mingw64/include/QtOpenGL -isystem C:/mingw64/include/QtOpenGLWidgets
+  OBJECT_DIR = CMakeFiles\lab4_sem3.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab4_sem3.dir
+
+build CMakeFiles/lab4_sem3.dir/HasseWindow.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_Debug C$:/Users/dimak/CLionProjects/lab4_sem3/HasseWindow.cpp || cmake_object_order_depends_target_lab4_sem3
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\lab4_sem3.dir\HasseWindow.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/dimak/CLionProjects/lab4_sem3/include -isystem C:/mingw64/include/QtCore -isystem C:/mingw64/include -isystem C:/mingw64/mkspecs/win32-g++ -isystem C:/mingw64/include/QtWidgets -isystem C:/mingw64/include/QtGui -isystem C:/mingw64/include/QtCharts -isystem C:/mingw64/include/QtOpenGL -isystem C:/mingw64/include/QtOpenGLWidgets
+  OBJECT_DIR = CMakeFiles\lab4_sem3.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab4_sem3.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target lab4_sem3
@@ -65,7 +97,7 @@ build CMakeFiles/lab4_sem3.dir/main.cpp.obj: CXX_COMPILER__lab4_sem3_unscanned_D
 #############################################
 # Link the executable lab4_sem3.exe
 
-build lab4_sem3.exe: CXX_EXECUTABLE_LINKER__lab4_sem3_Debug CMakeFiles/lab4_sem3.dir/main.cpp.obj | C$:/mingw64/lib/libQt6Charts.a C$:/mingw64/lib/libQt6OpenGLWidgets.a C$:/mingw64/lib/libQt6Widgets.a C$:/mingw64/lib/libQt6OpenGL.a C$:/mingw64/lib/libQt6Gui.a C$:/mingw64/lib/libQt6Core.a
+build lab4_sem3.exe: CXX_EXECUTABLE_LINKER__lab4_sem3_Debug CMakeFiles/lab4_sem3.dir/main.cpp.obj CMakeFiles/lab4_sem3.dir/DirectedWindow.cpp.obj CMakeFiles/lab4_sem3.dir/UndirectedWindow.cpp.obj CMakeFiles/lab4_sem3.dir/MainWindow.cpp.obj CMakeFiles/lab4_sem3.dir/HasseWindow.cpp.obj | C$:/mingw64/lib/libQt6Charts.a C$:/mingw64/lib/libQt6OpenGLWidgets.a C$:/mingw64/lib/libQt6Widgets.a C$:/mingw64/lib/libQt6OpenGL.a C$:/mingw64/lib/libQt6Gui.a C$:/mingw64/lib/libQt6Core.a
   FLAGS = -g
   LINK_LIBRARIES = C:/mingw64/lib/libQt6Charts.a  C:/mingw64/lib/libQt6OpenGLWidgets.a  C:/mingw64/lib/libQt6Widgets.a  C:/mingw64/lib/libQt6OpenGL.a  C:/mingw64/lib/libQt6Gui.a  C:/mingw64/lib/libQt6Core.a  -lmpr  -luserenv  -ld3d11  -ldxgi  -ldxguid  -ld3d12  -luser32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\lab4_sem3.dir

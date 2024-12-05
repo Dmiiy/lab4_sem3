@@ -3,7 +3,7 @@
 
 #include "Graph.h"
 #include <set>
-#include <stack>
+#include "DirectedGraph.h"
 
 /**
  * @brief Класс для представления неориентированного графа.
@@ -14,10 +14,9 @@
  * @tparam T Тип данных, ассоциированный с рёбрами графа (например, вес рёбер).
  */
 template<class T>
-class UndirectedGraph : public Graph<T> {
+class UndirectedGraph : public Graph<T>{
 private:
-    IDictionaryBinaryTree<int, IDictionaryBinaryTree<int, T>> adjacencyList; ///< Список смежности графа.
-    int vertexCount; ///< Количество вершин в графе.
+    DirectedGraph<T> directedGraph; /**< Список смежности для хранения рёбер графа. */
 
 public:
     /**
@@ -27,12 +26,8 @@ public:
      *
      * @param vertices Количество вершин в графе.
      */
-    explicit UndirectedGraph(int vertices) : vertexCount(vertices) {
-        // Инициализируем список смежности пустыми словарями для каждой вершины
-        for (int i = 0; i < vertices; ++i) {
-            adjacencyList.Add(i, IDictionaryBinaryTree<int, T>());
-        }
-    }
+    explicit UndirectedGraph(int vertices):directedGraph(vertices) {}
+
 
     /**
      * @brief Конструктор копирования.
@@ -41,7 +36,7 @@ public:
      *
      * @param graph Граф, который необходимо скопировать.
      */
-    UndirectedGraph(const UndirectedGraph<T> &graph) : vertexCount(graph.vertexCount), adjacencyList(graph.adjacencyList) {}
+    UndirectedGraph(const UndirectedGraph<T> &graph) : directedGraph(graph.directedGraph) {}
 
     /**
      * @brief Оператор присваивания.
@@ -55,8 +50,8 @@ public:
         if (this == &graph) {
             return *this; // Самоприсваивание, ничего не делаем
         }
-        vertexCount = graph.vertexCount;
-        adjacencyList = graph.adjacencyList;
+
+        directedGraph = graph.directedGraph;
         return *this;
     }
 
@@ -72,11 +67,8 @@ public:
      * @throws std::out_of_range Если индексы вершин выходят за допустимый диапазон.
      */
     void addEdge(int from, int to, T weight) override {
-        if (from < 0 || from >= vertexCount || to < 0 || to >= vertexCount) {
-            throw std::out_of_range("Invalid vertex index");
-        }
-        adjacencyList.GetReference(from).Add(to, weight); // Добавляем соседнюю вершину для 'from'
-        adjacencyList.GetReference(to).Add(from, weight); // Добавляем соседнюю вершину для 'to'
+        directedGraph.addEdge(from, to, weight);
+        directedGraph.addEdge(to, from, weight);
     }
 
     /**
@@ -90,18 +82,8 @@ public:
      * @throws std::invalid_argument Если ребро не найдено между вершинами.
      */
     void removeEdge(int from, int to) override {
-        bool removed = false;
-        if (adjacencyList.ContainsKey(from) && adjacencyList.Get(from).ContainsKey(to)) {
-            adjacencyList.GetReference(from).Remove(to); // Удаляем 'to' из соседей 'from'
-            removed = true;
-        }
-        if (adjacencyList.ContainsKey(to) && adjacencyList.Get(to).ContainsKey(from)) {
-            adjacencyList.GetReference(to).Remove(from); // Удаляем 'from' из соседей 'to'
-            removed = true;
-        }
-        if (!removed) {
-            throw std::invalid_argument("Edge not found");
-        }
+        directedGraph.removeEdge(from, to);
+        directedGraph.removeEdge(to, from);
     }
 
     /**
@@ -113,7 +95,7 @@ public:
      * @return false Если ребра нет.
      */
     bool hasEdge(int from, int to) const override {
-        return adjacencyList.ContainsKey(from) && adjacencyList.Get(from).ContainsKey(to);
+        return directedGraph.hasEdge(from, to);
     }
 
     /**
@@ -126,10 +108,7 @@ public:
      * @throws std::out_of_range Если вершина не существует в графе.
      */
     int getDegree(int vertex) const override {
-        if (!adjacencyList.ContainsKey(vertex)) {
-            throw std::out_of_range("Vertex not found");
-        }
-        return adjacencyList.Get(vertex).GetCount();
+        return directedGraph.getDegree(vertex);
     }
 
     /**
@@ -139,17 +118,7 @@ public:
      * @return ArraySequence<Pair<int, T>> Список пар (сосед, вес).
      */
     ArraySequence<Pair<int, T>> getNeighbors(int vertex) const override {
-        ArraySequence<Pair<int, T>> neighbors;
-        if (adjacencyList.ContainsKey(vertex)) {
-            auto neighborDict = adjacencyList.Get(vertex);
-            auto keys = neighborDict.GetKeys();
-            for (int i = 0; i < keys.getLength(); ++i) {
-                int neighbor = keys[i];
-                T weight = neighborDict.Get(neighbor);
-                neighbors.append(Pair<int, T>(neighbor, weight));
-            }
-        }
-        return neighbors;
+        return directedGraph.getNeighbors(vertex);
     }
 
     /**
@@ -161,10 +130,7 @@ public:
      * @throws std::invalid_argument Если ребро не найдено.
      */
     T getEdgeWeight(int from, int to) const override {
-        if (hasEdge(from, to)) {
-            return adjacencyList.Get(from).Get(to);
-        }
-        throw std::invalid_argument("Edge not found");
+        return directedGraph.getEdgeWeight(from, to);
     }
 
     /**
@@ -173,21 +139,7 @@ public:
      * Каждое ребро выводится один раз с указанием вершин и веса.
      */
     void printGraph() const override {
-        auto keys = adjacencyList.GetKeys();
-        std::set<std::pair<int, int>> printedEdges;
-        for (int i = 0; i < keys.getLength(); ++i) {
-            int from = keys[i];
-            auto neighborDict = adjacencyList.Get(from);
-            auto neighbors = neighborDict.GetKeys();
-            for (int j = 0; j < neighbors.getLength(); ++j) {
-                int to = neighbors[j];
-                if (printedEdges.find(std::make_pair(to, from)) == printedEdges.end()) {
-                    T weight = neighborDict.Get(to);
-                    std::cout << "Edge (" << from << " -- " << to << ") with weight: " << weight << std::endl;
-                    printedEdges.insert(std::make_pair(from, to)); // Помечаем ребро как выведенное
-                }
-            }
-        }
+        directedGraph.printGraph();
     }
 
     /**
@@ -196,7 +148,7 @@ public:
      * @return int Количество вершин.
      */
     int getVertexCount() const override {
-        return vertexCount;
+        return directedGraph.getVertexCount();
     }
 
     /**
@@ -210,17 +162,7 @@ public:
      * @throws std::out_of_range Если начальная вершина не существует в графе.
      */
     void dfs(int startVertex, ArraySequence<bool>& visited, std::function<void(int)> visit = nullptr) const {
-        if (startVertex < 0 || startVertex >= vertexCount) {
-            throw std::out_of_range("Invalid start vertex");
-        }
-        if (visited.getLength() != vertexCount) {
-            ArraySequence<bool> falseVisited;
-            for (int i = 0; i < vertexCount; ++i) {
-                falseVisited.append(false);
-            }
-            visited = falseVisited;
-        }
-        dfsUtil(startVertex, visited, visit);
+        directedGraph.dfs(startVertex, visited, visit);
     }
 
     /**
@@ -233,7 +175,7 @@ public:
     ArraySequence<std::tuple<int, int, T>> getEdges() const override {
         ArraySequence<std::tuple<int, int, T>> edges;
         std::set<std::pair<int, int>> seen; // Для избегания дублирования рёбер
-
+        auto adjacencyList=directedGraph.getAdjacencyList();
         auto keys = adjacencyList.GetKeys();
         for (int i = 0; i < keys.getLength(); ++i) {
             int from = keys[i];
@@ -258,7 +200,7 @@ public:
      * @return IDictionaryBinaryTree<int, IDictionaryBinaryTree<int, T>> Список смежности.
      */
     IDictionaryBinaryTree<int, IDictionaryBinaryTree<int, T>> getAdjacencyList() const {
-        return adjacencyList;
+        return directedGraph.getAdjacencyList();
     }
 
     /**
@@ -266,31 +208,7 @@ public:
      */
     ~UndirectedGraph() override = default;
 
-private:
-    /**
-     * @brief Рекурсивная вспомогательная функция для выполнения DFS.
-     *
-     * Отмечает текущую вершину как посещённую и рекурсивно посещает всех
-     * непосещённых соседей.
-     *
-     * @param vertex Текущая вершина.
-     * @param visited Список посещённых вершин.
-     * @param visit Функция, вызываемая при посещении вершины (может быть nullptr).
-     */
-    void dfsUtil(int vertex, ArraySequence<bool>& visited, std::function<void(int)> visit) const {
-        visited[vertex] = true;
-        if (visit) {
-            visit(vertex);
-        }
 
-        auto neighbors = getNeighbors(vertex);
-        for (int i = 0; i < neighbors.getLength(); ++i) {
-            int neighbor = neighbors[i].first;
-            if (!visited[neighbor]) {
-                dfsUtil(neighbor, visited, visit);
-            }
-        }
-    }
 };
 
 #endif // UNDIRECTEDGRAPH_H
