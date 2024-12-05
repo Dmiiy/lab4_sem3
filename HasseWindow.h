@@ -29,7 +29,7 @@ private slots:
 
 private:
     void setupUI();
-    void drawHasseDiagram(QGraphicsScene *scene, DirectedGraph<int> &graph);
+    void drawHasseDiagram(QGraphicsScene *scene, DirectedGraph<int> &graph,const QPen &pen = QPen(Qt::black));
     void calculateHasseLevels(const DirectedGraph<int>& graph, QMap<int, int>& levels);
     void drawElements();
 

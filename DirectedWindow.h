@@ -33,8 +33,6 @@ private:
     void setupUI();
     void drawGraph(QGraphicsScene *scene, DirectedGraph<int> &graph);
     void drawDirectedEdge(QGraphicsScene *scene, int from, int to, int weight, const QPen &pen = QPen(Qt::black));
-//    void drawShortestPath(const ArraySequence<int>& path, const QColor& pathColor);
-//    bool checkPathExists(int source, int target);
     void drawPath(const ArraySequence<int>& path, const QColor& color);
     void drawComponents(const ArraySequence<ArraySequence<int>>& components);
     void drawHighlightedEdge(QGraphicsScene *scene, int from, int to, int weight, const QColor& color);

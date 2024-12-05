@@ -66,3 +66,8 @@
 20	2868	7551356622102671	CMakeFiles/lab4_sem3.dir/DirectedWindow.cpp.obj	1390b18b2ae44aea
 22	2991	7551356622132493	CMakeFiles/lab4_sem3.dir/UndirectedWindow.cpp.obj	c13d7dbb9a852036
 2991	4012	7551356651822267	lab4_sem3.exe	2f6860817e039b44
+9	2081	7551369448503280	CMakeFiles/lab4_sem3.dir/main.cpp.obj	760a015ea0883314
+14	2095	7551369448553030	CMakeFiles/lab4_sem3.dir/MainWindow.cpp.obj	593c25bb78537374
+13	2756	7551369448533181	CMakeFiles/lab4_sem3.dir/DirectedWindow.cpp.obj	1390b18b2ae44aea
+16	2795	7551369448572971	CMakeFiles/lab4_sem3.dir/HasseWindow.cpp.obj	4609171fec07d502
+2795	3810	7551369476360064	lab4_sem3.exe	2f6860817e039b44

@@ -358,7 +358,7 @@ void HasseWindow::calculateHasseLevels(const DirectedGraph<int>& graph, QMap<int
     } while (changed);
 }
 
-void HasseWindow::drawHasseDiagram(QGraphicsScene *scene, DirectedGraph<int> &graph) {
+void HasseWindow::drawHasseDiagram(QGraphicsScene *scene, DirectedGraph<int> &graph,const QPen &pen) {
     scene->clear();
 
     auto edges = graph.getEdges();
@@ -366,39 +366,33 @@ void HasseWindow::drawHasseDiagram(QGraphicsScene *scene, DirectedGraph<int> &gr
         int from = std::get<0>(edges[i]);
         int to = std::get<1>(edges[i]);
 
-        const int vertexRadius = 15;
         QPointF fromPos = nodePositions.at(from);
         QPointF toPos = nodePositions.at(to);
 
-        // Вычисляем направляющий вектор
         QPointF direction = toPos - fromPos;
         qreal length = QLineF(fromPos, toPos).length();
-
-        // Нормализуем вектор
         direction /= length;
 
-        // Корректируем начальную и конечную точки с учетом размера вершин
+        const int vertexRadius = 15;
         QPointF adjustedFromPos = fromPos + direction * vertexRadius;
         QPointF adjustedToPos = toPos - direction * (vertexRadius + 10);
 
-        // Рисуем линию
-        QPen edgePen(Qt::black, 1.5);
-        scene->addLine(QLineF(adjustedFromPos, adjustedToPos), edgePen);
+        // Draw edge
+        scene->addLine(QLineF(adjustedFromPos, adjustedToPos), pen);
 
-        // Рисуем стрелку
+        // Draw arrow
         const qreal arrowSize = 10;
         QPointF arrowP1 = adjustedToPos + QPointF(
-                qSin(M_PI / 3) * arrowSize * (direction.y()),
-                -qSin(M_PI / 3) * arrowSize * (direction.x())
+                direction.y() * arrowSize - direction.x() * arrowSize,
+                -direction.x() * arrowSize - direction.y() * arrowSize
         );
         QPointF arrowP2 = adjustedToPos + QPointF(
-                -qSin(M_PI / 3) * arrowSize * (direction.y()),
-                qSin(M_PI / 3) * arrowSize * (direction.x())
+                -direction.y() * arrowSize - direction.x() * arrowSize,
+                direction.x() * arrowSize - direction.y() * arrowSize
         );
-
         QPolygonF arrowHead;
         arrowHead << adjustedToPos << arrowP1 << arrowP2;
-        scene->addPolygon(arrowHead, edgePen, QBrush(Qt::black));
+        scene->addPolygon(arrowHead, pen, QBrush(pen.color()));
     }
 
     const int vertexRadius = 15;
