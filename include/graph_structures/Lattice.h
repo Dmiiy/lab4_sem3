@@ -10,17 +10,33 @@
 #include <iostream>
 #include <stdexcept>
 
+/**
+ * @brief Класс для представления решётки и построения диаграммы Хассе.
+ *
+ * Класс `Lattice` предоставляет методы для построения и работы с диаграммой Хассе,
+ * как в явной, так и в неявной форме.
+ */
 template<typename T>
 class Lattice {
 private:
-    DirectedGraph<T> hasseDiagram; // Использование DirectedGraph с индексами
-    bool isExplicit;
-    std::function<bool(const T&, const T&)> relation; // Отношение для неявной диаграммы Хассе
-    ArraySequence<T> elements; // Элементы решётки
-    IDictionaryBinaryTree<T, int> elementToIndex; // Отображение элемента в индекс
-    ArraySequence<T> indexToElement;
+    DirectedGraph<T> hasseDiagram; /**< Диаграмма Хассе, представленная ориентированным графом. */
+    bool isExplicit; /**< Флаг, указывающий на явную или неявную форму диаграммы Хассе. */
+    std::function<bool(const T&, const T&)> relation; /**< Отношение для неявной диаграммы Хассе. */
+    ArraySequence<T> elements; /**< Элементы решётки. */
+    IDictionaryBinaryTree<T, int> elementToIndex; /**< Отображение элемента в индекс. */
+    ArraySequence<T> indexToElement; /**< Отображение индекса в элемент. */
 
-    // Реализация метода hasPath с использованием DFS
+    /**
+     * @brief Реализация метода hasPath с использованием DFS.
+     *
+     * Метод `hasPath` проверяет наличие пути между двумя вершинами в графе с использованием
+     * алгоритма поиска в глубину (DFS).
+     *
+     * @param src Исходная вершина.
+     * @param dest Целевая вершина.
+     * @param visited Массив посещённых вершин.
+     * @return true, если путь существует, иначе false.
+     */
     bool hasPath(int src, int dest, ArraySequence<bool>& visited) const {
         if (src == dest) {
             return true;
@@ -41,7 +57,12 @@ private:
     }
 
 public:
-    // Конструктор для явной диаграммы Хассе
+    /**
+     * @brief Конструктор для явной диаграммы Хассе.
+     *
+     * @param diagram Ориентированный граф, представляющий диаграмму Хассе.
+     * @param elems Последовательность элементов решётки.
+     */
     Lattice(const DirectedGraph<int>& diagram, const ArraySequence<T>& elems)
             : hasseDiagram(diagram), isExplicit(true), elements(elems) {
         int n = elements.getLength();
@@ -55,7 +76,12 @@ public:
         }
     }
 
-    // Конструктор для неявной диаграммы Хассе (построение по отношению)
+    /**
+     * @brief Конструктор для неявной диаграммы Хассе (построение по отношению).
+     *
+     * @param elems Последовательность элементов решётки.
+     * @param rel Отношение для построения диаграммы Хассе.
+     */
     Lattice(const ArraySequence<T>& elems, std::function<bool(const T&, const T&)> rel)
             : hasseDiagram(elems.getLength()), isExplicit(false), relation(rel), elements(elems) {
         int n = elems.getLength();
@@ -93,7 +119,15 @@ public:
         }
     }
 
-    // Метод для проверки отношения a <= b
+    /**
+     * @brief Метод для проверки отношения a <= b.
+     *
+     * @param a Первый элемент.
+     * @param b Второй элемент.
+     * @return true, если a <= b, иначе false.
+     *
+     * @throws std::invalid_argument Если элемент не найден в решётке.
+     */
     bool lessEqual(const T& a, const T& b) const {
         if (!elementToIndex.ContainsKey(a) || !elementToIndex.ContainsKey(b)) {
             throw std::invalid_argument("Element not found in lattice.");
@@ -109,10 +143,18 @@ public:
         return hasPath(indexA, indexB, visited);
     }
 
+    /**
+     * @brief Возвращает диаграмму Хассе.
+     *
+     * @return DirectedGraph<T> Диаграмма Хассе.
+     */
     DirectedGraph<T> getHasseDiagram() const {
         return hasseDiagram;
     }
 
+    /**
+     * @brief Печатает диаграмму Хассе.
+     */
     void printHasseDiagram() const {
         std::cout << "Hasse Diagram:" << std::endl;
         for (int i = 0; i < hasseDiagram.getVertexCount(); ++i) {
